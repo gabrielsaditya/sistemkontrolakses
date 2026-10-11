@@ -1,17 +1,16 @@
 from fastapi import Depends,FastAPI, APIRouter, HTTPException, status
-import models
 from routers.pekerja import router_pekerja
+from db import create_db_and_tables
 
-def create_app():
-    app = FastAPI()
-    app.include_router(router_pekerja)
+create_db_and_tables()
 
 app = FastAPI(
     title="Backend PPE Detection + RFID",
     version="1.0.0",
     description="backend untuk sistem deteksi gatekeeper PPE + RFID",
 )
-app.include_router(router_pekerja, prefix="/api/v1", tags=["pekerja"])
+app.include_router(router=router_pekerja)
+
 
 @app.get("/")
 def index():

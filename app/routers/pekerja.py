@@ -30,7 +30,7 @@ def create_pekerja(pekerja_in: PekerjaCreate, session: SessionDep):
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"FORMAT DATA TIDA VALID: {str(e)}"
+            detail=f"FORMAT DATA TIDAK VALID: {str(e)}"
         )
     except Exception as e:
         session.rollback()
@@ -61,7 +61,7 @@ def update_pekerja(payload: PekerjaUpdate, pekerja_id: uuid.UUID,session: Sessio
     try:
         pekerja = session.get(Pekerja, pekerja_id)
         if not pekerja:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, details='f"PEKERJA TIDAK DITEMUKAN')
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='f"PEKERJA TIDAK DITEMUKAN')
         pekerja_data =  payload.model_dump(exclude_unset=True)
         for key, value in pekerja_data.items():
             setattr(pekerja, key, value)
@@ -82,7 +82,7 @@ def delete_pekerja(pekerja_id: uuid.UUID, session: SessionDep = None):
     try:
         pekerja = session.get(Pekerja, pekerja_id)
         if not pekerja:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, details=f"PEKERJA TIDAK DITEMUKAN")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"PEKERJA TIDAK DITEMUKAN")
         session.delete(pekerja)
         session.commit()
         session.refresh(pekerja)
@@ -90,7 +90,7 @@ def delete_pekerja(pekerja_id: uuid.UUID, session: SessionDep = None):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            details=f"GAGAL MENGHAPUS DATA PEKERJA: {e}"
+            detail=f"GAGAL MENGHAPUS DATA PEKERJA: {e}"
         )
 
 @router_pekerja.post("/scan-rfid", status_code=status.HTTP_200_OK)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel
 import uuid
 
@@ -14,7 +14,7 @@ class Pekerja(PekerjaBase, table=True):
   id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
   name: str = Field(index=True, unique=True)
   rfid_uid: str = Field(index=True, unique=True) 
-  created_at: datetime = Field(default_factory=datetime.now)
+  created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
   is_active: bool = Field(default=True)
 
 class PekerjaCreate(PekerjaBase):
