@@ -29,7 +29,6 @@ class Inference:
                 None
             },
         ):
-        """Menyimpan atau memperbarui konfigurasi default inferensi."""
         self.config = {
             'image_size': image_size,
             'iou': iou,
@@ -42,7 +41,6 @@ class Inference:
         return self.config  
 
     def parsing_class(self):
-        'untuk ekstrak ada kelas apa aja -> kepentingan konfigurasi deteksi'
         if not self.model:
             return {}
         return self.model.names

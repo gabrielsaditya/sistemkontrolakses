@@ -109,4 +109,3 @@ def scan_rfid(payload: RFIDScan):
 
 
 
-    
