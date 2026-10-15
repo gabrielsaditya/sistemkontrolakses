@@ -36,6 +36,13 @@ class PekerjaRead(PekerjaBase):
   is_active: bool
   created_at: datetime
 
+class PekerjaDelete(PekerjaBase):
+  id: uuid.UUID | None
+  name: str | None
+  rfid_uid: str | None
+  created_at: datetime | None
+  is_active: bool | None
+
 class RFIDScan(SQLModel):
   """DATA MODEL KARTU RFID"""
   uid_rfid: str

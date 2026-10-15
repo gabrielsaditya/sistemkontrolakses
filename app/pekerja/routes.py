@@ -2,12 +2,13 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select, or_
 from typing import List
 import uuid
-from db import SessionDep
-from models import (
+from app.db import SessionDep
+from app.pekerja.models import (
     Pekerja,
     PekerjaCreate,
     PekerjaRead,
     PekerjaUpdate,
+    PekerjaDelete,
     RFIDScan
 )
 from pydantic import ValidationError
@@ -77,16 +78,15 @@ def update_pekerja(payload: PekerjaUpdate, pekerja_id: uuid.UUID,session: Sessio
             detail=f'GAGAL UPDATE DATA PEKERJA: {e}'
         )
 
-@router_pekerja.delete("/{pekerja_id}", response_model=PekerjaRead, status_code=status.HTTP_200_OK)
-def delete_pekerja(pekerja_id: uuid.UUID, session: SessionDep = None):
+@router_pekerja.delete("/{pekerja_id}", status_code=status.HTTP_200_OK)
+def delete_pekerja(pekerja_id: uuid.UUID, session: SessionDep):
     try:
         pekerja = session.get(Pekerja, pekerja_id)
         if not pekerja:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"PEKERJA TIDAK DITEMUKAN")
         session.delete(pekerja)
         session.commit()
-        session.refresh(pekerja)
-        return None
+        return{'message': 'pekerja berhasil di-delete'}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
