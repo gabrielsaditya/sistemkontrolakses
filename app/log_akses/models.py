@@ -37,26 +37,3 @@ class LogAkses(SQLModel, table=True):
     latensi_total: float | None = None
     latensi_udara: float | None = None
 
-
-class LogAksesResponse(SQLModel):
-    id: uuid.UUID
-    timestamp: datetime
-    pekerja_nama: str | None = None
-    rfid_uid: str | None = None
-    keputusan: bool
-    alasan: str | None = None
-    detections: List[dict]
-
-    foto_raw_path: str | None = None
-    foto_annotated_path: str | None = None
-
-    ukuran_foto_raw: int | None = None
-    ukuran_foto_annotated: int | None = None
-    ukuran_foto_total: int | None = None
-
-    latensi_1: float | None = None
-    latensi_2: float | None = None
-    latensi_3: float | None = None
-    latensi_4: float | None = None
-    latensi_total: float | None = None
-    latensi_udara: float | None = None

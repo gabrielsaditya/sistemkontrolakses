@@ -3,7 +3,9 @@ from typing import List
 from sqlmodel import Field, SQLModel
 from sqlalchemy import Column, JSON
 from datetime import datetime
+from fastapi import Form
 
+#TABEL KONFIGURASI
 class TabelKonfigurasiDeteksi(SQLModel, table=True):
     __tablename__ = "konfigurasi_deteksi"
 
@@ -14,6 +16,8 @@ class TabelKonfigurasiDeteksi(SQLModel, table=True):
     conf: float = 0.5
     classes: List[int] | None = Field(default=None, sa_column=Column(JSON))
 
+
+#DTO - HTTP -> DATA REQUEST DAN RESPONSE
 class Konfigurasi(SQLModel):
     id: uuid.UUID | None
     model_path: str | None
@@ -23,11 +27,15 @@ class Konfigurasi(SQLModel):
     classes: List[int] | None
 
 class DeteksiRequest(SQLModel):
-    uid_rfid: str | None
-    timestamp_dari_esp: datetime | None    
+    device_id: str = Form(...)
+    uid_rfid: str = Form(...)
+    timestamp_dari_esp: str = Form(...)   
 
 class DeteksiResponse(SQLModel):
-    is_akses: bool
+    keputusan_akses: bool
+    nama_pekerja: str
+    alasan: str
+    timestamp: datetime
 
 
 

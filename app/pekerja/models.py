@@ -19,7 +19,12 @@ class Pekerja(PekerjaBase, table=True):
 
 class PekerjaCreate(PekerjaBase):
   """DATA REQUEST DARI CLIENT UNTUK CREATE DATA"""
-  pass
+  name: str
+  rfid_uid: str
+  role: str 
+  name: str
+  created_at: datetime
+  is_active: bool = Field(default_factory= True)
 
 class PekerjaUpdate(SQLModel): 
   """DATA REQUEST DARI CLIENT UNTUK UPDATE DATA"""
