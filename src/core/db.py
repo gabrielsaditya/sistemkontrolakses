@@ -7,10 +7,6 @@ from fastapi import Depends
 load_dotenv()
 engine = create_engine(os.getenv("DATABASE_URL"), echo=True)
 
-def drop_tables():
-    print("MENGHAPUSSS... TABEL DAN DATABASE")
-    SQLModel.metadata.drop_all(engine)
-
 def create_db_and_tables():
     print("MEMBUATZZZ TABEL DAN DATABASE...")
     SQLModel.metadata.create_all(engine)

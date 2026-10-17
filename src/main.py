@@ -1,11 +1,12 @@
 from fastapi import Depends,FastAPI, APIRouter, HTTPException, status
-from app.pekerja.routes import router_pekerja
-from app.deteksi.routes import router_deteksi
-from app.db import create_db_and_tables, drop_tables
+from src.core.db import create_db_and_tables
 from contextlib import asynccontextmanager
-from app.deteksi.helper_deteksi import Inference, get_inference
+from src.deteksi.helper_deteksi import Inference, get_inference
 from huggingface_hub import hf_hub_download
 from pathlib import Path
+from logging import konfigurasi_logging
+from api import tambah_route
+
 
 @asynccontextmanager
 async def lifespan_model_inferensi(app: FastAPI):
@@ -23,9 +24,7 @@ app = FastAPI(
     lifespan=lifespan_model_inferensi
 )
 
-app.include_router(router=router_pekerja)
-app.include_router(router=router_deteksi)
-
+tambah_route(app)
 
 @app.get("/")
 def index():

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File,
 from sqlmodel import select, or_
 from typing import List
 import uuid
-from app.db import SessionDep
+from app.core.db import SessionDep
 from app.deteksi.models import (
     TabelKonfigurasiDeteksi,
     Konfigurasi,
@@ -12,7 +12,7 @@ from app.deteksi.models import (
 from app.log_akses.models import LogAkses
 from pydantic import ValidationError
 from datetime import datetime, timezone
-from app.pekerja.models import Pekerja
+from app.features.pekerja.models import Pekerja
 from app.deteksi.helper_deteksi import get_inference
 from app.deteksi import simpan_foto
 import time
