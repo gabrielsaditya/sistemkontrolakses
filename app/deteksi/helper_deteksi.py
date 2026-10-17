@@ -2,7 +2,7 @@ from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
 from typing import Optional
 from io import BytesIO
-from PIL import Image
+import cv2
 import numpy as np
 from pathlib import Path
 import os
@@ -10,13 +10,16 @@ import os
 class Inference:
     def __init__(self, model = None):
         self.model: YOLO | None = None
-        self.config = {
+        self.konfigurasi_deteksi_gambar = {
             'IMAGE_SIZE': 640,
             'IOU': 0.45,
             'DEVICE': 'cpu',
             'CONF': 0.5,
             'CLASSES': None,
             'CLASS_CONF': []
+        }
+        self.konfigurasi_deteksi_video = {
+            "SIZE": None
         }
 
     def load_model_dari_huggingface(self, repo_id: str, filename: str = 'best.pt'):
@@ -38,7 +41,7 @@ class Inference:
         except Exception as e:
             print(f'GAGAL LOAD MODEL DARI LOKAL: {e}')
 
-    def atur_konfigurasi(
+    def atur_konfigurasi_deteksi_gambar(
             self,
             image_size: int = 640,
             iou: float = 0.45,
@@ -49,27 +52,23 @@ class Inference:
             class_conf: dict = {},
         ):
         #MENDUKUNG PERUBAHAN PARSIAL
-        self.config['IMAGE_SIZE'] = image_size
-        self.config['IOU'] = iou
-        self.config['DEVICE'] = device
-        self.config['HALF'] = half
-        self.config['CONF'] = conf
-        self.config['CLASSES'] = classes
-        self.config['CLASSES_CONF'] = class_conf
+        self.konfigurasi_deteksi_gambar['IMAGE_SIZE'] = image_size
+        self.konfigurasi_deteksi_gambar['IOU'] = iou
+        self.konfigurasi_deteksi_gambar['DEVICE'] = device
+        self.konfigurasi_deteksi_gambar['HALF'] = half
+        self.konfigurasi_deteksi_gambar['CONF'] = conf
+        self.konfigurasi_deteksi_gambar['CLASSES'] = classes
+        self.konfigurasi_deteksi_gambar['CLASSES_CONF'] = class_conf
 
         print(f"BERHASIL SET CONFIG")
-        return self.config  
+        return self.konfigurasi_deteksi_gambar  
 
+        #MENDUKUNG PERUBAHAN PARSIAL YHEUU
     def parsing_class_yang_dapat_dideteksi(self):
         if not self.model:
             return {}
         return self.model.names
 
-    def _bytes_ke_array(self, data: bytes) -> np.ndarray:
-        '''
-        METHOD KHUSUS UNTUK UBAH BYTES JPEG DARI ESP NANTI DIUBAH KE BENTUK JPEG YANG BISA DIDETEKSI YOLO
-        '''
-        return np.array(Image.open(BytesIO(data)).convert('RGB'))
     
     def prediksi_gambar(self, images):
 
@@ -83,12 +82,17 @@ class Inference:
         image_source = []
         for image in images:
             if isinstance(image,( bytes, bytearray)):
-                image_source.append(self._bytes_ke_array(image))
+                print('DARI ESP FORMAT BYTES -> DIKONVERSIKAN KE NUMPY ARRAY ')
+                array = np.frombuffer(image, np.uint8)
+                print('DIUBAH MENJADI FORMAT RGB')
+                frame = cv2.imdecode(array, cv2.IMREAD_COLOR)
+                if frame is None:
+                    raise ValueError('JPEG INVALID / TERPOTONG')
             else:
                 image_source.append(image)
 
         
-        konfigurasi =  self.config
+        konfigurasi =  self.konfigurasi_deteksi_gambar
         hasil_deteksi_semua_gambar = []
         try:
         #2. JALANKAN PREDIKSI 
@@ -127,12 +131,13 @@ class Inference:
         except Exception as e:
             raise RuntimeError(f"TERJADI KESALAHAN SAAT MELAKUKAN INFERENSI: {e}")
 
+
 #FUNGSI UNTUK SIMPAN FOTO
 def simpan_foto(data: bytes, log_id: str) -> tuple[str, int]:
-    path = Path("logs/raw") / f"{log_id}.jpg"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-    return str(path), len(data)
+        path = Path("logs/raw") / f"{log_id}.jpg"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return str(path), len(data)
 
 _inference: Inference | None = None
 
@@ -142,3 +147,23 @@ def get_inference() -> Inference:
     if _inference is None:
         _inference = Inference()
     return _inference
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    BASE_DIR = Path(__file__).resolve().parent  #path file nya persis
+    MODEL_PATH = BASE_DIR / "model" / "best.pt" #path model 
+    ASSET_DIR = BASE_DIR.parent / "assets"
+
+    format = [".jpg", '.png', '.jpeg']
+    image_path = [
+        str(file)
+        for file in ASSET_DIR.iterdir()
+        if file.is_file() and file.suffix.lower() in format 
+    ]
+
+    print(image_path)
+    inferensi = Inference()
+    #load_model = inferensi.load_model_dari_lokal(MODEL_PATH)
+    load_model = inferensi.load_model_dari_huggingface(repo_id="leeyunjai/yolo11-ppe", filename="ppe-11x.pt")
+    hasil = inferensi.prediksi_gambar(image_path)

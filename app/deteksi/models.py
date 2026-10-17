@@ -2,7 +2,7 @@ import uuid
 from typing import List
 from sqlmodel import Field, SQLModel
 from sqlalchemy import Column, JSON
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import Form
 
 #TABEL KONFIGURASI
@@ -29,15 +29,13 @@ class Konfigurasi(SQLModel):
 class DeteksiRequest(SQLModel):
     device_id: str = Form(...)
     uid_rfid: str = Form(...)
-    timestamp_dari_esp: str = Form(...)   
+    timestamp: datetime | None = Form(None)     
+
 
 class DeteksiResponse(SQLModel):
     keputusan_akses: bool
     nama_pekerja: str
     alasan: str
     timestamp: datetime
-
-
-
 
 

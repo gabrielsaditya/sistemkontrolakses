@@ -8,16 +8,16 @@ class PekerjaBase(SQLModel):
   rfid_uid: str
   role: str
 
-class Pekerja(PekerjaBase, table=True):
-  """TABEL PEKERJA"""
+class Pekerja(SQLModel, table=True):
   __tablename__ = 'pekerja'
   id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
   name: str = Field(index=True, unique=True)
-  rfid_uid: str = Field(index=True, unique=True) 
+  rfid_uid: str = Field(index=True, unique=True)
   created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+  role: str
   is_active: bool = Field(default=True)
 
-class PekerjaCreate(PekerjaBase):
+class PekerjaCreate(SQLModel):
   """DATA REQUEST DARI CLIENT UNTUK CREATE DATA"""
   name: str
   rfid_uid: str
