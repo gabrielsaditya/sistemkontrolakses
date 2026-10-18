@@ -3,15 +3,14 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 from sqlalchemy import or_
-from src.pekerja.model import (
-    Pekerja,
+from .model import (
     PekerjaRead,
     PekerjaCreate,
     PekerjaUpdate,
     PekerjaDelete,
     RFIDScan
 )
-
+from ..entities.pekerja import Pekerja
 
 class PekerjaService:
     def __init__(self, session: Session):
@@ -119,9 +118,9 @@ class PekerjaService:
         id_pekerja: uuid.UUID,
         form: PekerjaUpdate
     ) -> Pekerja:
-        pekerja = self.get_by_id(id_pekerja)
-
         try:
+            pekerja = self.get_by_id(id_pekerja)
+
             for key, value in form.model_dump(
                 exclude_unset=True
             ).items():

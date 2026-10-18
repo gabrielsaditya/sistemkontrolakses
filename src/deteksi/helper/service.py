@@ -1,11 +1,10 @@
 from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
-from typing import Optional
-from io import BytesIO
 import cv2
 import numpy as np
 from pathlib import Path
-import os
+from typing import List
+from ..model import UploadFile
 
 class Inference:
     def __init__(self, model = None):
@@ -15,11 +14,8 @@ class Inference:
             'IOU': 0.45,
             'DEVICE': 'cpu',
             'CONF': 0.5,
-            'CLASSES': None,
+            'CLASSES': ["helmet", "vest", "person"],
             'CLASS_CONF': []
-        }
-        self.konfigurasi_deteksi_video = {
-            "SIZE": None
         }
 
     def load_model_dari_huggingface(self, repo_id: str, filename: str = 'best.pt'):
@@ -68,30 +64,28 @@ class Inference:
         if not self.model:
             return {}
         return self.model.names
-
     
-    def prediksi_gambar(self, images):
+    async def prediksi_gambar(self, images: list[UploadFile]) -> List[dict]:
 
         #1.OLAH DATA BYTES DARI ESP JADI ARRAY NUMPY YANG BISA DI PASSING KE YOLO, CONVERT DULU KE RGB
         if self.model is None:
             raise RuntimeError('MODEL BELUM DI LOAD... LOAD DULU!')
 
-        if isinstance(images, (bytes, bytearray, np.ndarray)):
-            images = [images]
+        if not images:
+            raise ValueError("GAMBAR TIDAK BOLEH KOSONG BRO")
 
         image_source = []
         for image in images:
-            if isinstance(image,( bytes, bytearray)):
-                print('DARI ESP FORMAT BYTES -> DIKONVERSIKAN KE NUMPY ARRAY ')
-                array = np.frombuffer(image, np.uint8)
-                print('DIUBAH MENJADI FORMAT RGB')
-                frame = cv2.imdecode(array, cv2.IMREAD_COLOR)
-                if frame is None:
-                    raise ValueError('JPEG INVALID / TERPOTONG')
-            else:
-                image_source.append(image)
+            nama_file = image.filename
+            image = await image.read()
+            array = np.frombuffer(image, np.uint8)
+            frame = cv2.imdecode(array, cv2.IMREAD_COLOR)
 
-        
+            if frame is None:
+                raise ValueError(f"GAMBAR TIDAK VALID: {nama_file}")
+
+            image_source.append(frame)
+
         konfigurasi =  self.konfigurasi_deteksi_gambar
         hasil_deteksi_semua_gambar = []
         try:
@@ -104,10 +98,6 @@ class Inference:
                 classes=konfigurasi['CLASSES'] or None,
                 device=konfigurasi['DEVICE'],
                 verbose=False,
-                save=True,
-                project='uploads',
-                name='predict',
-                exist_ok=True
             )
             #3. ITERASI PER GAMBAR -> PROSES PER GAMBAR YA
             for result in results:
@@ -132,13 +122,6 @@ class Inference:
             raise RuntimeError(f"TERJADI KESALAHAN SAAT MELAKUKAN INFERENSI: {e}")
 
 
-#FUNGSI UNTUK SIMPAN FOTO
-def simpan_foto(data: bytes, log_id: str) -> tuple[str, int]:
-        path = Path("logs/raw") / f"{log_id}.jpg"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
-        return str(path), len(data)
-
 _inference: Inference | None = None
 
 def get_inference() -> Inference:
@@ -148,22 +131,5 @@ def get_inference() -> Inference:
         _inference = Inference()
     return _inference
 
-if __name__ == "__main__":
-    from pathlib import Path
 
-    BASE_DIR = Path(__file__).resolve().parent  #path file nya persis
-    MODEL_PATH = BASE_DIR / "model" / "best.pt" #path model 
-    ASSET_DIR = BASE_DIR.parent / "assets"
 
-    format = [".jpg", '.png', '.jpeg']
-    image_path = [
-        str(file)
-        for file in ASSET_DIR.iterdir()
-        if file.is_file() and file.suffix.lower() in format 
-    ]
-
-    print(image_path)
-    inferensi = Inference()
-    #load_model = inferensi.load_model_dari_lokal(MODEL_PATH)
-    load_model = inferensi.load_model_dari_huggingface(repo_id="leeyunjai/yolo11-ppe", filename="ppe-11x.pt")
-    hasil = inferensi.prediksi_gambar(image_path)
