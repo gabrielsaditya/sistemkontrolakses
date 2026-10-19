@@ -18,6 +18,7 @@ async def lifespan_model_inferensi(app: FastAPI):
         repo_id="leeyunjai/yolo11-ppe", 
         filename="ppe-11x.pt"
         )
+    
     yield
 
 #4. INISIALISASI SERVER BACKEND

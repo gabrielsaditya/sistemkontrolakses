@@ -24,6 +24,13 @@ class TabelLogAkses(SQLModel, table=True):
     )
     keputusan: bool
 
+    path_gambar_raw: list[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSON, nullable=False)
+    )
+
+    path_gambar_terdeteksi: list[str] = Field(
+    default_factory=list,
+    sa_column=Column(JSON, nullable=False)
+    )
     pekerja: "Pekerja" = Relationship(back_populates="log_akses")
-    foto_raw_path: str
-    foto_after_deteksi: str

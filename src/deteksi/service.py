@@ -36,8 +36,9 @@ class DeteksiService:
         t0 = form.latensi_request
         log_id = uuid.uuid4()
 
-        alamat_foto_raw = storage_dir / "raw" / f"{log_id}.jpg"
-        alamat_foto_after_deteksi = storage_dir / "annotated" / f"{log_id}.jpg"
+        alamat_foto_raw = STORAGE_DIR / "raw" / str(log_id)
+        alamat_foto_after_deteksi = STORAGE_DIR / "annotated" / str(log_id)
+
         try:
             pekerja = self.session.exec(select(Pekerja).where(Pekerja.rfid_uid == form.uid_rfid)).first()
             if not pekerja:
@@ -45,7 +46,7 @@ class DeteksiService:
 
             #2. t1 - t0 = latensi udara dari esp sampai ke server
             t1 = time.perf_counter() 
-            hasil = await self.inference.prediksi_gambar(images)
+            hasil = await self.inference.prediksi_gambar(images, alamat_foto_raw, alamat_foto_after_deteksi)
             hasil_per_gambar = hasil if isinstance(hasil, list) else [hasil]
 
             #3. t2-t1 = latensi inferensi batch gambar
@@ -73,6 +74,15 @@ class DeteksiService:
                 else False
             )
             timestamp_akses = datetime.now(timezone.utc)
+            path_raw = [
+                str(Path(item["PATH_RAW"]).relative_to(STORAGE_DIR))
+                for item in hasil_per_gambar
+            ]
+
+            path_annotated = [
+                str(Path(item["PATH_ANNOTATED"]).relative_to(STORAGE_DIR))
+                for item in hasil_per_gambar
+            ]
 
             log = TabelLogAkses(
                 id_pekerja=pekerja.id,
@@ -83,7 +93,9 @@ class DeteksiService:
                 latensi_total = t2 -t0,
                 item_terdeteksi=list(set(semua_item)),
                 keputusan=keputusan_akhir,
-                tanggal_akses=timestamp_akses
+                tanggal_akses=timestamp_akses,
+                path_gambar_raw=path_raw,
+                path_gambar_annotated=path_annotated, 
             )
 
             self.session.add(log)
@@ -98,6 +110,10 @@ class DeteksiService:
                 "nama_pekerja": pekerja.name,
                 'uid_rfid': pekerja.rfid_uid
             }
+        except HTTPException:
+            self.session.rollback()
+            raise
+        
         except Exception as e:
             self.session.rollback()
             logging.exception("GAGAL DETEKSI GAMBAR")

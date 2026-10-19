@@ -1,8 +1,16 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(BASE_DIR / ".env")
+
+STORAGE_DIR = Path(os.getenv("ALAMAT_STORAGE"))
+
 from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
 import cv2
 import numpy as np
-from pathlib import Path
 from typing import List
 from ..model import UploadFile
 
@@ -14,7 +22,7 @@ class Inference:
             'IOU': 0.45,
             'DEVICE': 'cpu',
             'CONF': 0.5,
-            'CLASSES': ["helmet", "vest", "person"],
+            'CLASSES': [0, 1],
             'CLASS_CONF': []
         }
 
@@ -65,7 +73,7 @@ class Inference:
             return {}
         return self.model.names
     
-    async def prediksi_gambar(self, images: list[UploadFile]) -> List[dict]:
+    async def prediksi_gambar(self, images: list[UploadFile], alamat_raw: Path, alamat_terdeteksi: Path) -> List[dict]:
 
         #1.OLAH DATA BYTES DARI ESP JADI ARRAY NUMPY YANG BISA DI PASSING KE YOLO, CONVERT DULU KE RGB
         if self.model is None:
@@ -73,9 +81,14 @@ class Inference:
 
         if not images:
             raise ValueError("GAMBAR TIDAK BOLEH KOSONG BRO")
+        
+        alamat_raw.mkdir(parents=True, exist_ok=True)
+        alamat_terdeteksi.mkdir(parents=True, exist_ok=True)
 
         image_source = []
-        for image in images:
+        path_raw = []
+
+        for index, image in enumerate(images):
             nama_file = image.filename
             image = await image.read()
             array = np.frombuffer(image, np.uint8)
@@ -83,8 +96,11 @@ class Inference:
 
             if frame is None:
                 raise ValueError(f"GAMBAR TIDAK VALID: {nama_file}")
-
+            nama_raw = alamat_raw / f"{index}.jpg"
+            if not cv2.imwrite(str(nama_raw), frame):
+                raise RuntimeError(f"GAGAL MENYIMPAN GAMBAR: {nama_raw}")
             image_source.append(frame)
+            path_raw.append(str(nama_raw))
 
         konfigurasi =  self.konfigurasi_deteksi_gambar
         hasil_deteksi_semua_gambar = []
@@ -101,6 +117,12 @@ class Inference:
             )
             #3. ITERASI PER GAMBAR -> PROSES PER GAMBAR YA
             for result in results:
+                nama_gambar_terdeteksi = alamat_terdeteksi / f"{index}.jpg"
+
+                if not cv2.imwrite(str(nama_gambar_terdeteksi), result.plot()):
+                    raise RuntimeError(f"GAGAL MENYIMPAN: {nama_gambar_terdeteksi}")
+
+                boxes = result.boxes
                 #SEBAGAI CATATAN RESULT INI OBJECT BUKAN DICTIONARY
                 list_bounding_box = result.boxes.xyxy.tolist()
                 list_kelas_terdeteksi = result.boxes.cls.int().tolist()
@@ -113,7 +135,9 @@ class Inference:
                     {
                     'LIST_BOUNDING_BOX' : list_bounding_box,
                     'LIST_KELAS_TERDETEKSI' : list_kelas_terdeteksi,
-                    'CONF_LIST' : list_confidence
+                    'CONF_LIST' : list_confidence,
+                    "PATH_RAW": path_raw[index],
+                    "PATH_ANNOTATED": str(nama_gambar_terdeteksi),
                     }
                 )
                 #DIAMBIL MASING MASING DI SATU GAMBARNYA
