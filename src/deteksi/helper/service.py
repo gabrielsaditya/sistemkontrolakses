@@ -88,6 +88,7 @@ class Inference:
         image_source = []
         path_raw = []
 
+        size_gambar_raw_mb = []
         for index, image in enumerate(images):
             nama_file = image.filename
             image = await image.read()
@@ -96,9 +97,11 @@ class Inference:
 
             if frame is None:
                 raise ValueError(f"GAMBAR TIDAK VALID: {nama_file}")
+            
             nama_raw = alamat_raw / f"{index}.jpg"
             if not cv2.imwrite(str(nama_raw), frame):
                 raise RuntimeError(f"GAGAL MENYIMPAN GAMBAR: {nama_raw}")
+            size_gambar_raw_mb.append(os.path.getsize(nama_raw) / (1024**2))
             image_source.append(frame)
             path_raw.append(str(nama_raw))
 
@@ -116,17 +119,18 @@ class Inference:
                 verbose=False,
             )
             #3. ITERASI PER GAMBAR -> PROSES PER GAMBAR YA
-            for result in results:
+            for index, result in enumerate(results):
                 nama_gambar_terdeteksi = alamat_terdeteksi / f"{index}.jpg"
 
                 if not cv2.imwrite(str(nama_gambar_terdeteksi), result.plot()):
                     raise RuntimeError(f"GAGAL MENYIMPAN: {nama_gambar_terdeteksi}")
-
+                size_gambar_terdeteksi_mb = os.path.getsize(nama_gambar_terdeteksi) / (1024**2)
                 boxes = result.boxes
                 #SEBAGAI CATATAN RESULT INI OBJECT BUKAN DICTIONARY
                 list_bounding_box = result.boxes.xyxy.tolist()
                 list_kelas_terdeteksi = result.boxes.cls.int().tolist()
                 list_confidence = result.boxes.conf.tolist()
+                keputusan_lolos = sorted(list_kelas_terdeteksi) == sorted(self.konfigurasi_deteksi_gambar['CLASSES'])
 
                 if not (len(list_bounding_box) == len(list_kelas_terdeteksi) == len(list_confidence)):
                     raise ValueError('PANJANG LIST TIDAK SESUAI')
@@ -138,10 +142,12 @@ class Inference:
                     'CONF_LIST' : list_confidence,
                     "PATH_RAW": path_raw[index],
                     "PATH_ANNOTATED": str(nama_gambar_terdeteksi),
+                    "SIZE_FOTO_RAW": float(size_gambar_raw_mb[index]),
+                    "SIZE_FOTO_TERDETEKSI": float(size_gambar_terdeteksi_mb),
+                    "LOLOS": keputusan_lolos
                     }
                 )
-                #DIAMBIL MASING MASING DI SATU GAMBARNYA
-            return hasil_deteksi_semua_gambar[0] if len(hasil_deteksi_semua_gambar) == 1 else hasil_deteksi_semua_gambar                
+            return hasil_deteksi_semua_gambar
         except Exception as e:
             raise RuntimeError(f"TERJADI KESALAHAN SAAT MELAKUKAN INFERENSI: {e}")
 
@@ -154,6 +160,5 @@ def get_inference() -> Inference:
     if _inference is None:
         _inference = Inference()
     return _inference
-
 
 
