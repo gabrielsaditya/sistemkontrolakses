@@ -23,10 +23,6 @@ if not SECRET_KEY and not ALGORITHM:
 class AuthService:
     def __init__(self, session: SessionDep):
         self.session = session
-        self.load_environment()
-    def load_environment(self):
-        auth_helper = AuthHelper()
-        self.ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')
 
     def register(self, form: Registrasi):
         #cari pekerja dulu
@@ -98,12 +94,12 @@ class AuthService:
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 username: str = payload.get("sub")
                 if username is None:
-                    raise HTTPException(status_code=401, detail="Token payload invalid")
+                    raise HTTPException(status_code=401, detail="TOKEN PAYLOAD TIDAK VALID")
             except JWTError:
-                raise HTTPException(status_code=401, detail="Token invalid")
+                raise HTTPException(status_code=401, detail="TOKEN INVALID")
             
             user = self.session.exec(select(User).where(User.username == username)).first()
             if user is None:
-                raise HTTPException(status_code=404, detail="User not found")
+                raise HTTPException(status_code=404, detail="USER TIDAK DITEMUKAN")
             
             return user
