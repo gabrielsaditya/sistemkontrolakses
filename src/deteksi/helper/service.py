@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env")
-
 STORAGE_DIR = Path(os.getenv("ALAMAT_STORAGE"))
+if not STORAGE_DIR.is_absolute():
+    STORAGE_DIR = BASE_DIR / STORAGE_DIR
 
 from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
@@ -13,18 +14,11 @@ import cv2
 import numpy as np
 from typing import List
 from ..model import UploadFile
+from ...entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
 
 class Inference:
     def __init__(self, model = None):
         self.model: YOLO | None = None
-        self.konfigurasi_deteksi_gambar = {
-            'IMAGE_SIZE': 640,
-            'IOU': 0.45,
-            'DEVICE': 'cpu',
-            'CONF': 0.5,
-            'CLASSES': [0, 1],
-            'CLASS_CONF': []
-        }
 
     def load_model_dari_huggingface(self, repo_id: str, filename: str = 'best.pt'):
         #HUGGING FACE ADALAH PLATFORM MODERN UNTUK UNDUH MODEL YANG SUDAH DILATIH BANYAK ORANG
@@ -44,36 +38,8 @@ class Inference:
             return self.model
         except Exception as e:
             print(f'GAGAL LOAD MODEL DARI LOKAL: {e}')
-
-    def atur_konfigurasi_deteksi_gambar(
-            self,
-            image_size: int = 640,
-            iou: float = 0.45,
-            device: str = 'cpu',
-            half: bool = False,
-            conf: float = 0.5,
-            classes: list = None,
-            class_conf: dict = {},
-        ):
-        #MENDUKUNG PERUBAHAN PARSIAL
-        self.konfigurasi_deteksi_gambar['IMAGE_SIZE'] = image_size
-        self.konfigurasi_deteksi_gambar['IOU'] = iou
-        self.konfigurasi_deteksi_gambar['DEVICE'] = device
-        self.konfigurasi_deteksi_gambar['HALF'] = half
-        self.konfigurasi_deteksi_gambar['CONF'] = conf
-        self.konfigurasi_deteksi_gambar['CLASSES'] = classes
-        self.konfigurasi_deteksi_gambar['CLASSES_CONF'] = class_conf
-
-        print(f"BERHASIL SET CONFIG")
-        return self.konfigurasi_deteksi_gambar  
-
-        #MENDUKUNG PERUBAHAN PARSIAL YHEUU
-    def parsing_class_yang_dapat_dideteksi(self):
-        if not self.model:
-            return {}
-        return self.model.names
     
-    async def prediksi_gambar(self, images: list[UploadFile], alamat_raw: Path, alamat_terdeteksi: Path) -> List[dict]:
+    async def prediksi_gambar(self, images: list[UploadFile], alamat_raw: Path, alamat_terdeteksi: Path, konfigurasi) -> List[dict]:
 
         #1.OLAH DATA BYTES DARI ESP JADI ARRAY NUMPY YANG BISA DI PASSING KE YOLO, CONVERT DULU KE RGB
         if self.model is None:
@@ -84,11 +50,10 @@ class Inference:
         
         alamat_raw.mkdir(parents=True, exist_ok=True)
         alamat_terdeteksi.mkdir(parents=True, exist_ok=True)
-
         image_source = []
         path_raw = []
-
         size_gambar_raw_mb = []
+
         for index, image in enumerate(images):
             nama_file = image.filename
             image = await image.read()
@@ -98,29 +63,28 @@ class Inference:
             if frame is None:
                 raise ValueError(f"GAMBAR TIDAK VALID: {nama_file}")
             
-            nama_raw = alamat_raw / f"{index}.jpg"
+            nama_raw = alamat_raw / f"{index}_raw.jpg"
             if not cv2.imwrite(str(nama_raw), frame):
                 raise RuntimeError(f"GAGAL MENYIMPAN GAMBAR: {nama_raw}")
             size_gambar_raw_mb.append(os.path.getsize(nama_raw) / (1024**2))
             image_source.append(frame)
             path_raw.append(str(nama_raw))
 
-        konfigurasi =  self.konfigurasi_deteksi_gambar
         hasil_deteksi_semua_gambar = []
         try:
         #2. JALANKAN PREDIKSI 
             results = self.model.predict(
                 source=image_source,
-                conf=konfigurasi['CONF'],
-                iou=konfigurasi['IOU'],
-                imgsz=konfigurasi['IMAGE_SIZE'],
-                classes=konfigurasi['CLASSES'] or None,
-                device=konfigurasi['DEVICE'],
+                conf=konfigurasi['conf'] or 0.5,
+                iou=konfigurasi['iou'] or 0.45,
+                imgsz=konfigurasi['image_size'] or 640,
+                classes=konfigurasi['classes'] or None,
+                device='cpu',  # Catatan: 'device' tidak ada di tabel, bisa di-hardcode atau ditambah ke kolom tabel
                 verbose=False,
             )
             #3. ITERASI PER GAMBAR -> PROSES PER GAMBAR YA
             for index, result in enumerate(results):
-                nama_gambar_terdeteksi = alamat_terdeteksi / f"{index}.jpg"
+                nama_gambar_terdeteksi = alamat_terdeteksi / f"{index}_annotated.jpg"
 
                 if not cv2.imwrite(str(nama_gambar_terdeteksi), result.plot()):
                     raise RuntimeError(f"GAGAL MENYIMPAN: {nama_gambar_terdeteksi}")
@@ -130,7 +94,7 @@ class Inference:
                 list_bounding_box = result.boxes.xyxy.tolist()
                 list_kelas_terdeteksi = result.boxes.cls.int().tolist()
                 list_confidence = result.boxes.conf.tolist()
-                keputusan_lolos = sorted(list_kelas_terdeteksi) == sorted(self.konfigurasi_deteksi_gambar['CLASSES'])
+                keputusan_lolos = sorted(list_kelas_terdeteksi) == sorted(konfigurasi['classes'])
 
                 if not (len(list_bounding_box) == len(list_kelas_terdeteksi) == len(list_confidence)):
                     raise ValueError('PANJANG LIST TIDAK SESUAI')
@@ -151,6 +115,8 @@ class Inference:
         except Exception as e:
             raise RuntimeError(f"TERJADI KESALAHAN SAAT MELAKUKAN INFERENSI: {e}")
 
+    async def inferensi_video(self, video_source):
+        pass
 
 _inference: Inference | None = None
 

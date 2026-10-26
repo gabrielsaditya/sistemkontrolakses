@@ -1,19 +1,47 @@
-
 import os
 import psutil
+import threading
 
 """
-DIGUNAKAN SEBAGAI BANTUAN UNTUK MENGUKUR PERFORMA SERVER SAAT MENJALANKAN TUGAS 
+Teknik ukur intinya
+nanti melakukan ukur lalu hasil masukin ke list setiap 0.5 detik
+lalu nanti dihitung rata rata nya
+lumayan panjang kodenya karena pakai threading supaya atur nanti bisa di stop nya di line keberapa pengambilan datanya
 """
 
-def ukur_performa_server():
-    return {
-        "penggunaan_cpu": process.cpu_percent(),
-        
+def proses_berat(durasi=5):
+    """
+    FUNGSI UNTUK NYOBAK AJA
+    """
+    import time
+    mulai = time.time()
+    while time.time() - mulai < durasi:
+        sum(i * i for i in range(100_000))
 
-        #dari byte e mb ya dibagi 1024 terus dibagi 1024 lagi 
-        "penggunaan_ram_mb": process.memory_info().rss / (1024 ** 2),
-    }
+def ukur_performa(interval=0.5):
+    process = psutil.Process(os.getpid())
+    sampling_ukur_cpu = []
+    sampling_ukur_ram = []
+    selesai = threading.Event()
 
-hasil_ukur =ukur_performa_server()
-print(hasil_ukur)
+    def monitor():
+        while not selesai.is_set():
+            sampling_ukur_cpu.append(process.cpu_percent(interval=interval))
+            sampling_ukur_ram.append(process.memory_info().rss / (1024 ** 2))
+            selesai.wait(0.5)
+
+    process.cpu_percent()
+    thread = threading.Thread(target=monitor)
+    thread.start()
+
+    def stop():
+        selesai.set()
+        thread.join()
+
+        rata_rata_pemakaian_cpu = sum(sampling_ukur_cpu) / len(sampling_ukur_cpu) if sampling_ukur_cpu else 0
+        rata_rata_pemakaian_ram = sum(sampling_ukur_ram) / len(sampling_ukur_ram) if sampling_ukur_ram else 0
+
+        return rata_rata_pemakaian_cpu, rata_rata_pemakaian_ram
+
+    return stop
+

@@ -22,6 +22,7 @@ class Konfigurasi(SQLModel):
     iou: float | None
     conf: float | None
     classes: List[int] | None
+    minimum_vote_foto: int | None
 
 class DeteksiRequest(SQLModel):
     device_id: str 

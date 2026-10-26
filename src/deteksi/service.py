@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import os
 
+#membuat alamat storage
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env")
-
 STORAGE_DIR = Path(os.getenv("ALAMAT_STORAGE"))
-
 if not STORAGE_DIR.is_absolute():
     STORAGE_DIR = BASE_DIR / STORAGE_DIR
 
@@ -15,7 +15,7 @@ from ..core.db import SessionDep
 from ..entities.pekerja import Pekerja
 from ..entities.log_akses import TabelLogAkses
 from ..entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
-from .helper.service import get_inference
+from .helper.service import get_inference, Inference
 from .model import DeteksiRequest, Konfigurasi
 import time
 import uuid
@@ -24,85 +24,81 @@ from fastapi import HTTPException
 from datetime import datetime, timezone
 from ..logging_config import logging
 from dotenv import load_dotenv
+from ..helper.ukur_cpu_ram import ukur_performa
+from ..entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
 
 
 class DeteksiService:
     def __init__(self, session: SessionDep):
         self.session = session
         self.inference = get_inference()
+        self.konfigurasi_user = self._load_tabel_konfigurasi()
 
+    def _load_tabel_konfigurasi(self):
+        try:
+            tabel_konfigurasi = self.session.exec(select(TabelKonfigurasiDeteksi)).first()
+            if not tabel_konfigurasi:
+                raise HTTPException(404, 'TABEL KONFIGURASI TIDAK DITEMUKAN')
+
+            dictionary_tabel = tabel_konfigurasi.model_dump(exclude={'id'})
+            print(dictionary_tabel)
+            return dictionary_tabel
+        except HTTPException:
+            self.session.rollback()
+            raise
+        except Exception as e:
+            self.session.rollback()
+            raise HTTPException(500, 'GAGAL LOAD TABEL KONFIGURASI')
+    
     async def deteksi_gambar(self, images, form: DeteksiRequest):
         #1. timestamp esp
         t0 = form.latensi_request
         log_id = uuid.uuid4()
-
+        
         alamat_foto_raw = STORAGE_DIR / "raw" / str(log_id)
         alamat_foto_after_deteksi = STORAGE_DIR / "annotated" / str(log_id)
 
         try:
+
+            ukur = ukur_performa()
             pekerja = self.session.exec(select(Pekerja).where(Pekerja.rfid_uid == form.uid_rfid)).first()
             if not pekerja:
                 raise HTTPException(404, 'PEKERJA TIDAK DITEMUKAN')
 
             #2. t1 - t0 = latensi udara dari esp sampai ke server
             t1 = time.perf_counter() 
-            hasil = await self.inference.prediksi_gambar(images, alamat_foto_raw, alamat_foto_after_deteksi)
-            hasil_per_gambar = hasil if isinstance(hasil, list) else [hasil]
+            list_hasil = await self.inference.prediksi_gambar(images, alamat_foto_raw, alamat_foto_after_deteksi, self.konfigurasi_user)
 
             #3. t2-t1 = latensi inferensi batch gambar
             t2 = time.perf_counter()
-            keputusan_per_gambar = []
-            semua_item = []
 
+            #logic untuk voting
+            jumlah_diterima = sum(hasil['LOLOS'] for hasil in list_hasil if hasil['LOLOS'])
+            minimum_vote = self.konfigurasi_user['minimum_vote_foto']
+            keputusan_akhir = jumlah_diterima >= minimum_vote
 
-            for hasil_gambar in hasil_per_gambar:
-                kelas = hasil_gambar["LIST_KELAS_TERDETEKSI"]
-                nama_kelas = [
-                    self.inference.model.names[k]
-                    for k in set(kelas)
-                ]
-                semua_item.extend(nama_kelas)
-
-            
-                apd_lengkap = 0 in kelas and 2 in kelas
-                keputusan_per_gambar.append(apd_lengkap)
-
-            jumlah_diterima = sum(keputusan_per_gambar)
-            keputusan_akhir = (
-                True
-                if jumlah_diterima > len(keputusan_per_gambar) / 2
-                else False
-            )
-            timestamp_akses = datetime.now(timezone.utc)
-            path_raw = [
-                str(Path(item["PATH_RAW"]).relative_to(STORAGE_DIR))
-                for item in hasil_per_gambar
-            ]
-
-            path_annotated = [
-                str(Path(item["PATH_ANNOTATED"]).relative_to(STORAGE_DIR))
-                for item in hasil_per_gambar
-            ]
-
+            #berhentikan pengukuran cpu dan ram 
+            pemakaian_cpu, pemakaian_ram = ukur()
             log = TabelLogAkses(
                 id_pekerja=pekerja.id,
                 uid_rfid=pekerja.rfid_uid,
                 nama_pekerja=pekerja.name,
-                latensi_udara_masuk = t1 - t0,
-                latensi_inferensi = t2-t1,
-                latensi_total = t2 -t0,
-                item_terdeteksi=list(set(semua_item)),
-                keputusan=keputusan_akhir,
-                tanggal_akses=timestamp_akses,
-                path_gambar_raw=path_raw,
-                path_gambar_annotated=path_annotated, 
+                item_terdeteksi=[hasil['LIST_KELAS_TERDETEKSI'] for hasil in list_hasil],
+                path_gambar_raw=[hasil['PATH_RAW'] for hasil in list_hasil],
+                path_gambar_terdeteksi=[hasil['PATH_ANNOTATED'] for hasil in list_hasil],
+                size_foto_raw=[hasil['SIZE_FOTO_RAW'] for hasil in list_hasil],
+                size_foto_terdeteksi=[hasil['SIZE_FOTO_TERDETEKSI'] for hasil in list_hasil],
+                keputusan_akses=keputusan_akhir,
+                latensi_request = t1-t0,
+                latensi_inferensi_yolo = t2-t1,
+                latensi_total = t2-t0,    
+                pemakaian_cpu=pemakaian_cpu,
+                pemakaian_ram=pemakaian_ram
             )
 
             self.session.add(log)
             self.session.commit()
             self.session.refresh(log)
-
-
 
             #3. latensi proses parsing hasil keputusan dan tambah log ke db
             return {
@@ -121,14 +117,12 @@ class DeteksiService:
 
 
     #konfigurasi
-    def update_konfigurasi(self, payload: Konfigurasi): 
-        logging.info(f"1. MULAI QUERY")   
+    def update_konfigurasi(self, form: Konfigurasi): 
         try:
-            statement = select(TabelKonfigurasiDeteksi)
-            konfigurasi = self.session.exec(statement).first()
+            konfigurasi = self.session.exec(select(TabelKonfigurasiDeteksi)).first()
             if not konfigurasi:
                 raise HTTPException(404, 'TIDAK DITEMUKAN KONFIGURASI')
-            for key, value in payload.model_dump(exclude_unset=True).items():
+            for key, value in form.model_dump(exclude_unset=True, exclude={'id'}).items():
                 setattr(konfigurasi, key, value)
             self.session.add(konfigurasi)
             self.session.commit()
@@ -141,17 +135,8 @@ class DeteksiService:
             raise HTTPException(500, 'INTERNAL SERVER ERROR')
 
     def lihat_konfigurasi(self):
-        logging.info("1. MULAI QUERY")
         try:
-            statement = select(TabelKonfigurasiDeteksi)
-            logging.info("2. STATEMENT DIBUAT")
-
-            result = self.session.exec(statement)
-            logging.info("3. QUERY DIEKSEKUSI")
-
-            konfigurasi = result.first()
-            logging.info(f"4. HASIL DIAMBIL: {konfigurasi}")
-
+            konfigurasi = self.session.exec(select(TabelKonfigurasiDeteksi)).first()
             return konfigurasi
 
         except Exception as e:

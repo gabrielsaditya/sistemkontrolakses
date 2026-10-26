@@ -25,7 +25,6 @@ class PekerjaRead(BaseModel):
   id: uuid.UUID 
   name: str 
   rfid_uid: str 
-  created_at: datetime 
   role: str
   is_active: bool 
 

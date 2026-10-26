@@ -27,7 +27,6 @@ async def deteksi_gambar(
 @router.get('/', response_model=Konfigurasi, status_code=status.HTTP_200_OK)
 def lihat_konfigurasi(session: SessionDep):
     servis = DeteksiService(session)
-    logging.info("WOWWWWWWWWWWWww")
     return servis.lihat_konfigurasi()
 
 @router.patch("/", response_model=Konfigurasi, status_code=status.HTTP_200_OK)

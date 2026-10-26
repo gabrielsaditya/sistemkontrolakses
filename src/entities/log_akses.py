@@ -3,6 +3,16 @@ from sqlalchemy import Column, JSON
 from datetime import datetime, timezone
 import uuid
 
+"""
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+Pengukuran dilakukan dengan beberapa metrik:
+- delay atau latensi request response
+- latensi yolo atau inferensi
+- konsumsi cpu dan ram server saat menjalankan flow inferensi
+- akurasi flow sampai keputusan akhir membuka pintu akses
+"""
+
 class TabelLogAkses(SQLModel, table=True):
     __tablename__ = "log_akses"
 
@@ -13,16 +23,12 @@ class TabelLogAkses(SQLModel, table=True):
     )
     uid_rfid: str
     nama_pekerja: str
-    latensi_udara_masuk: float
-    latensi_inferensi: float
-    latensi_total: float
     tanggal_akses: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
     item_terdeteksi: list[str] = Field(
         sa_column=Column(JSON, nullable=False)
     )
-    keputusan: bool
 
     path_gambar_raw: list[str] = Field(
         default_factory=list,
@@ -33,4 +39,21 @@ class TabelLogAkses(SQLModel, table=True):
     default_factory=list,
     sa_column=Column(JSON, nullable=False)
     )
+
+    #size foto
+    size_foto_raw: list[float] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    size_foto_terdeteksi: list[float] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+
+    #keputusan akses 
+    keputusan_akses: bool
+
+    #latensi
+    latensi_request: float
+    latensi_inferensi_yolo: float
+    latensi_total: float
+
+    #cpu & ram usage
+    pemakaian_cpu: float
+    pemakaian_ram: float
+
     pekerja: "Pekerja" = Relationship(back_populates="log_akses")

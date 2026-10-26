@@ -8,12 +8,8 @@ class Pekerja(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(index=True, unique=True)
     rfid_uid: str = Field(index=True, unique=True)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
     role: str
     is_active: bool = Field(default=True)
-
     log_akses: list["TabelLogAkses"] = Relationship(
         back_populates="pekerja"
     )

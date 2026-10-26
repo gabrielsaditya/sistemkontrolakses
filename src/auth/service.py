@@ -1,0 +1,82 @@
+from sqlmodel import Session, select
+from ...src.core.db import SessionDep
+from .model import Registrasi, Login
+from ..entities.user import User
+from fastapi import HTTPException, status
+from .helper.auth_security import AuthHelper
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+class AuthService:
+    def __init__(self, session: SessionDep):
+        self.session = session
+
+    def load_environment(self):
+        auth_helper = AuthHelper()
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')
+    def register(self, form: Registrasi):
+        #cari pekerja dulu
+        try:
+            db_user = self.session.exec(select(User).where(form.username == User.username)).first()
+
+            if db_user:
+                raise HTTPException(404, 'PEKERJA TELAH TERDAFTAR!')
+            service = AuthHelper()
+            password_hashed = service.hash_password(form.password)
+            data_user_baru = User(
+                username = form.username,
+                hashed_password = password_hashed,
+            )
+            
+            self.session.add(data_user_baru)
+            self.session.commit()
+            self.session.refresh(data_user_baru)
+
+            #buat token akses
+            
+            token = service.buat_token_akses({
+                'sub': form.username
+            })
+
+
+            return {
+                'token_akses': token,
+                'tipe_token': 'bearer'
+            }
+            
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            raise HTTPException(500, 'PROSES LOGIN GAGAL DILAKUKAN')
+
+    def login(self, form: Login):
+        try:
+            pekerja_terdaftar = self.session.exec(select(User).where(User.username == form.username)).first()
+
+            if not pekerja_terdaftar :
+                raise HTTPException(401, 'INVALID CREDENTIALS!')
+            
+            servis = AuthHelper()
+            
+            verifikasi_password = servis.verifikasi_password(form.password, pekerja_terdaftar.hashed_password)
+            if not verifikasi_password:
+                raise HTTPException(401, "INVALID CREDENTIALS")
+            
+            token = servis.buat_token_akses({
+                'sub': form.username
+            })
+
+            return {
+                'token_akses': token,
+                'tipe_token': 'bearer'
+            }
+
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')
+        

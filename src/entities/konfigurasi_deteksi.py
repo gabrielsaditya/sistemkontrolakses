@@ -12,4 +12,4 @@ class TabelKonfigurasiDeteksi(SQLModel, table=True):
     iou: float = 0.45
     conf: float = 0.5
     classes: List[int] | None = Field(default=None, sa_column=Column(JSON))
-
+    minimum_vote_foto: int = 1
