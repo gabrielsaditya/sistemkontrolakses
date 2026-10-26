@@ -8,7 +8,6 @@ from sqlmodel import select
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
-
 @router.post('/register', response_model=Token)
 def daftar_user_baru(session: SessionDep,form: Registrasi):
     try: 

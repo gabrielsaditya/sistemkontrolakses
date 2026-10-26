@@ -2,19 +2,32 @@ from sqlmodel import Session, select
 from ...src.core.db import SessionDep
 from .model import Registrasi, Login
 from ..entities.user import User
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from .helper.auth_security import AuthHelper
 from dotenv import load_dotenv
 from pathlib import Path
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 import os
+
+BASE_DIR = Path(__file__).resolve.parents[2]
+load_dotenv(BASE_DIR / '.env')
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+SECRET_KEY = os.getenv('SECRET_KEY')
+ALGORITHM = os.getenv('ALGORITHM')
+
+if not SECRET_KEY and not ALGORITHM:
+    raise HTTPException(404, 'SECRET_KEY DAN ALGORITHM TIDAK DITEMUKAN')
 
 class AuthService:
     def __init__(self, session: SessionDep):
         self.session = session
-
+        self.load_environment()
     def load_environment(self):
         auth_helper = AuthHelper()
         self.ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')
+
     def register(self, form: Registrasi):
         #cari pekerja dulu
         try:
@@ -79,4 +92,18 @@ class AuthService:
 
         except Exception as e:
             raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')
-        
+
+    def get_current_user(self, token: str = Depends(oauth2_scheme)) -> User:
+            try:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                username: str = payload.get("sub")
+                if username is None:
+                    raise HTTPException(status_code=401, detail="Token payload invalid")
+            except JWTError:
+                raise HTTPException(status_code=401, detail="Token invalid")
+            
+            user = self.session.exec(select(User).where(User.username == username)).first()
+            if user is None:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            return user
