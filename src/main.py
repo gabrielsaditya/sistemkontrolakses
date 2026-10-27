@@ -23,9 +23,9 @@ async def lifespan_model_inferensi(app: FastAPI):
 
 #4. INISIALISASI SERVER BACKEND
 app = FastAPI(
-    title="Backend PPE Detection + RFID",
+    title="BACKEND PPE DETECTION AND RFID",
     version="1.0.0",
-    description="backend untuk sistem deteksi gatekeeper PPE + RFID",
+    description="BACKEND UNTUK SISTEM KONTROL AKSES AREA BERBASIS IOT DAN COMPUTER VISION",
     lifespan=lifespan_model_inferensi
 )
 

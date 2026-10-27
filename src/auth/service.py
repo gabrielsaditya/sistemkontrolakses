@@ -88,18 +88,3 @@ class AuthService:
 
         except Exception as e:
             raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')
-
-    def get_current_user(self, token: str = Depends(oauth2_scheme)) -> User:
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                username: str = payload.get("sub")
-                if username is None:
-                    raise HTTPException(status_code=401, detail="TOKEN PAYLOAD TIDAK VALID")
-            except JWTError:
-                raise HTTPException(status_code=401, detail="TOKEN INVALID")
-            
-            user = self.session.exec(select(User).where(User.username == username)).first()
-            if user is None:
-                raise HTTPException(status_code=404, detail="USER TIDAK DITEMUKAN")
-            
-            return user

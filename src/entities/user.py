@@ -8,5 +8,7 @@ class User(SQLModel, table=True):
     username: str = Field(min_length=6, max_length=20, unique=True, index=True)
     hashed_password: str = Field(min_length=6)
     role: str = Field(default="user")
+
+    konfigurasi_deteksi: 'TabelKonfigurasiDeteksi' =Relationship(back_populates='user')
     
         
