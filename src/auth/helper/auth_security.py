@@ -1,13 +1,7 @@
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from dotenv import load_dotenv
-
-import os
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(BASE_DIR / ".env")
+from ...core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 class AuthHelper:
     def __init__(self):
@@ -15,14 +9,12 @@ class AuthHelper:
         self.load_environment()
 
     def load_environment(self):
-        self.SECRET_KEY = os.getenv("SECRET_KEY")
-        self.ALGORITHM = os.getenv("ALGORITHM")
-        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(
-            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15")
-        )
+        self.SECRET_KEY = SECRET_KEY
+        self.ALGORITHM = ALGORITHM
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = ACCESS_TOKEN_EXPIRE_MINUTES
 
         if not self.SECRET_KEY or not self.ALGORITHM:
-            raise RuntimeError("Konfigurasi autentikasi belum lengkap")
+            raise RuntimeError("KONFIGURASI AUTENTIKASI BELUM LENGKAP")
 
 
     def hash_password(self, password_asal: str):

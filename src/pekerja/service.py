@@ -4,11 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 from sqlalchemy import or_
 from .model import (
-    PekerjaRead,
     PekerjaCreate,
     PekerjaUpdate,
-    PekerjaDelete,
-    RFIDScan
 )
 from ..entities.pekerja import Pekerja
 

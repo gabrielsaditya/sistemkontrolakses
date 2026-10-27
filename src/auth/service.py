@@ -1,24 +1,9 @@
-from sqlmodel import Session, select
-from ...src.core.db import SessionDep
+from sqlmodel import select
+from ..core.db import SessionDep
 from .model import Registrasi, Login
 from ..entities.user import User
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException
 from .helper.auth_security import AuthHelper
-from dotenv import load_dotenv
-from pathlib import Path
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-import os
-
-BASE_DIR = Path(__file__).resolve.parents[2]
-load_dotenv(BASE_DIR / '.env')
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
-SECRET_KEY = os.getenv('SECRET_KEY')
-ALGORITHM = os.getenv('ALGORITHM')
-
-if not SECRET_KEY and not ALGORITHM:
-    raise HTTPException(404, 'SECRET_KEY DAN ALGORITHM TIDAK DITEMUKAN')
 
 class AuthService:
     def __init__(self, session: SessionDep):

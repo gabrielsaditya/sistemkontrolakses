@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 import uuid
 
+if TYPE_CHECKING:
+    from .konfigurasi_deteksi import TabelKonfigurasiDeteksi
 
 class User(SQLModel, table=True):
     __tablename__ = "user"

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
 import uuid
 from ..core.db import SessionDep
@@ -6,13 +6,12 @@ from .model import (
     PekerjaCreate,
     PekerjaRead,
     PekerjaUpdate,
-    PekerjaDelete,
     RFIDScan
 )
-from ..entities.pekerja import Pekerja
 from .service import PekerjaService
+from ..auth.dependency import get_current_user, require_role
 
-router = APIRouter(prefix="/pekerja", tags=['pekerja'])
+router = APIRouter(prefix="/pekerja", tags=['pekerja'], dependencies=[Depends(require_role("admin"))])
 
 @router.post("/", response_model=PekerjaRead, status_code=status.HTTP_201_CREATED)
 def tambah_pekerja(session: SessionDep, form: PekerjaCreate):
@@ -38,6 +37,8 @@ def delete_pekerja(session: SessionDep, id_pekerja: uuid.UUID):
     eksekusi_tugas = PekerjaService(session)
     return eksekusi_tugas.delete_pekerja(id_pekerja)
 
+
+#untuk scan rfid dari esp supaya muncul uid nya di frontend
 @router.post("/scan-rfid", status_code=status.HTTP_200_OK)
 def scan_rfid(form: RFIDScan):
     try:

@@ -1,18 +1,7 @@
-from pathlib import Path
-from dotenv import load_dotenv
-import os
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv('.env')
-SECRET_KEY = os.getenv('SECRET_KEY') 
-ALGORITHM = os.getenv('ALGORITHM')
-
-print(BASE_DIR)
-print(SECRET_KEY)
-print(ALGORITHM)
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlmodel import Session, select
+from ..core.config import SECRET_KEY, ALGORITHM
+from sqlmodel import select
 from fastapi import Depends, HTTPException
 from ..entities.user import User
 from ..core.db import SessionDep

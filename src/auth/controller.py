@@ -1,9 +1,7 @@
-from fastapi import HTTPException, status, Depends, APIRouter
+from fastapi import HTTPException, APIRouter
 from .service import AuthService
 from ..core.db import SessionDep
-from ..entities.user import User
-from .model import UserPublic, Token, Registrasi, Login
-from sqlmodel import select
+from .model import Token, Registrasi, Login
 
 
 router = APIRouter(prefix='/auth', tags=['auth'])

@@ -21,6 +21,7 @@ def buat_konfigurasi_default():
 def create_db_and_tables():
     print("MEMBUATZZZ TABEL DAN DATABASE...")
     SQLModel.metadata.create_all(engine)
+    print(SQLModel.metadata.tables.keys())
 
 def get_session():
     with Session(engine) as session:

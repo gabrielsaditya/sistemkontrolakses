@@ -1,6 +1,7 @@
 from sqlmodel import Field, SQLModel, Relationship
 from sqlalchemy import Column, JSON
 from datetime import datetime, timezone
+from ..entities.pekerja import Pekerja
 import uuid
 
 """
