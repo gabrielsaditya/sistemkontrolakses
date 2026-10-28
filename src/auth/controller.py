@@ -3,7 +3,6 @@ from .service import AuthService
 from ..core.db import SessionDep
 from .model import Token, Registrasi, Login
 
-
 router = APIRouter(prefix='/auth', tags=['auth'])
 
 @router.post('/register', response_model=Token)
@@ -12,7 +11,7 @@ def daftar_user_baru(session: SessionDep,form: Registrasi):
         servis = AuthService(session)
         return servis.register(form)
     except Exception as e:
-        raise HTTPException(505, f'PROSES REGISTER GAGAL DILAKUKAN')
+        raise HTTPException(500, f'PROSES REGISTER GAGAL DILAKUKAN: {e}')
 
 
 @router.post('/login', response_model=Token)
@@ -21,5 +20,5 @@ def login(session: SessionDep, form: Login):
         servis = AuthService(session)
         return servis.login(form)
     except Exception as e:
-        raise HTTPException(505, f'GAGAL LOGIN USER: {e}')
+        raise HTTPException(500, f'GAGAL LOGIN USER: {e}')
         

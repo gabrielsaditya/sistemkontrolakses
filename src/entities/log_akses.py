@@ -1,8 +1,11 @@
 from sqlmodel import Field, SQLModel, Relationship
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, Index, text
 from datetime import datetime, timezone
-from ..entities.pekerja import Pekerja
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..entities.pekerja import Pekerja
 
 """
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
@@ -58,3 +61,23 @@ class TabelLogAkses(SQLModel, table=True):
     pemakaian_ram: float
 
     pekerja: "Pekerja" = Relationship(back_populates="log_akses")
+
+
+    #indexing
+    __table_args__ = (
+        
+        #indexing berdasar tanggal dan id -> descend
+        Index(
+            'ix_log_akses_tanggal_id',
+            text('tanggal_akses DESC'),
+            text('id DESC')
+        ),
+
+        #indexing berdasar 
+        Index(
+            'ix_log_akses_pekerja_tanggal_id',
+            'id_pekerja',
+            text('tanggal_akses DESC'),
+            text('id DESC')
+        )
+    )

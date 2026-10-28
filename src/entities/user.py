@@ -1,9 +1,5 @@
-from typing import TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 import uuid
-
-if TYPE_CHECKING:
-    from .konfigurasi_deteksi import TabelKonfigurasiDeteksi
 
 class User(SQLModel, table=True):
     __tablename__ = "user"
@@ -11,7 +7,4 @@ class User(SQLModel, table=True):
     username: str = Field(min_length=6, max_length=20, unique=True, index=True)
     hashed_password: str = Field(min_length=6)
     role: str = Field(default="user")
-
-    konfigurasi_deteksi: 'TabelKonfigurasiDeteksi' =Relationship(back_populates='user')
-    
         

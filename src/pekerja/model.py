@@ -27,14 +27,7 @@ class PekerjaRead(BaseModel):
   rfid_uid: str 
   role: str
   is_active: bool 
-
-class PekerjaDelete(BaseModel):
-  id: uuid.UUID | None
-  name: str | None
-  rfid_uid: str | None
-  created_at: datetime | None
-  is_active: bool | None
-
+  
 class RFIDScan(BaseModel):
   """DATA MODEL KARTU RFID"""
   uid_rfid: str

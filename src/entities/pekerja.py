@@ -1,7 +1,10 @@
 from sqlmodel import Field, SQLModel, Relationship
-from ..entities.log_akses import TabelLogAkses
 from datetime import datetime, timezone
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..entities.log_akses import TabelLogAkses
 
 class Pekerja(SQLModel, table=True):
     __tablename__ = "pekerja"

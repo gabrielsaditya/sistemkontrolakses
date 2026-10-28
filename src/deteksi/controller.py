@@ -1,11 +1,7 @@
-from fastapi import FastAPI,status, APIRouter,Depends, HTTPException, Form, File, UploadFile as UF
-from typing import Annotated
+from fastapi import status, APIRouter, Form, File
 from .model import (DeteksiRequest, DeteksiResponse, Konfigurasi)
 from .service import DeteksiService
 from ..core.db import SessionDep
-from datetime import datetime
-from ..logging_config import logging
-from pydantic import WithJsonSchema
 from .model import UploadFile
 
 router = APIRouter(prefix="/deteksi", tags=['deteksi'])

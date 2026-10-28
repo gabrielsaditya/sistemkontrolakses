@@ -40,10 +40,12 @@ class AuthService:
             }
             
         except HTTPException:
+            self.session.rollback() 
             raise
 
         except Exception as e:
-            raise HTTPException(500, 'PROSES LOGIN GAGAL DILAKUKAN')
+            self.session.rollback()
+            raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')
 
     def login(self, form: Login):
         try:
@@ -69,7 +71,9 @@ class AuthService:
 
 
         except HTTPException:
+            self.session.rollback()
             raise
 
         except Exception as e:
+            self.session.rollback()
             raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')

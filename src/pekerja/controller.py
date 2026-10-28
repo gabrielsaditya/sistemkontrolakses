@@ -9,7 +9,7 @@ from .model import (
     RFIDScan
 )
 from .service import PekerjaService
-from ..auth.dependency import get_current_user, require_role
+from ..auth.dependency import require_role
 
 router = APIRouter(prefix="/pekerja", tags=['pekerja'], dependencies=[Depends(require_role("admin"))])
 
