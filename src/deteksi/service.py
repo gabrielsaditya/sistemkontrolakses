@@ -1,29 +1,16 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
-import os
-
-#membuat alamat storage
-BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(BASE_DIR / ".env")
-STORAGE_DIR = Path(os.getenv("ALAMAT_STORAGE"))
-if not STORAGE_DIR.is_absolute():
-    STORAGE_DIR = BASE_DIR / STORAGE_DIR
-
-from .model import DeteksiRequest, DeteksiResponse
+import time
+import uuid
+from ..core.config import ALAMAT_STORAGE
+from .model import DeteksiRequest
 from ..core.db import SessionDep
 from ..entities.pekerja import Pekerja
 from ..entities.log_akses import TabelLogAkses
 from ..entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
-from .helper.service import get_inference, Inference
+from .helper.service import get_inference
 from .model import DeteksiRequest, Konfigurasi
-import time
-import uuid
-from sqlmodel import Session, select
+from sqlmodel import select
 from fastapi import HTTPException
-from datetime import datetime, timezone
 from ..logging_config import logging
-from dotenv import load_dotenv
 from ..helper.ukur_cpu_ram import ukur_performa
 from ..entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
 
@@ -55,8 +42,8 @@ class DeteksiService:
         t0 = form.latensi_request
         log_id = uuid.uuid4()
         
-        alamat_foto_raw = STORAGE_DIR / "raw" / str(log_id)
-        alamat_foto_after_deteksi = STORAGE_DIR / "annotated" / str(log_id)
+        alamat_foto_raw = ALAMAT_STORAGE / "raw" / str(log_id)
+        alamat_foto_after_deteksi = ALAMAT_STORAGE / "annotated" / str(log_id)
 
         try:
 

@@ -1,6 +1,6 @@
+import uuid
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
-import uuid
 from ..core.db import SessionDep
 from .model import (
     PekerjaCreate,

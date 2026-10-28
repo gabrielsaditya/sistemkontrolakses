@@ -1,20 +1,11 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(BASE_DIR / ".env")
-STORAGE_DIR = Path(os.getenv("ALAMAT_STORAGE"))
-if not STORAGE_DIR.is_absolute():
-    STORAGE_DIR = BASE_DIR / STORAGE_DIR
-
-from ultralytics import YOLO
-from huggingface_hub import hf_hub_download
 import cv2
 import numpy as np
+from ultralytics import YOLO
+from huggingface_hub import hf_hub_download
 from typing import List
 from ..model import UploadFile
-from ...entities.konfigurasi_deteksi import TabelKonfigurasiDeteksi
+from pathlib import Path
 
 class Inference:
     def __init__(self, model = None):
