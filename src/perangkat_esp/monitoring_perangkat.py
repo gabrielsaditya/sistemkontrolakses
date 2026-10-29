@@ -12,6 +12,7 @@ devices = {}
 class DeviceRequest(SQLModel):
     id_device: str
     kualitas_rssi_perangkat: int | None = None
+    api_key: str
 
 class DeviceResponse(SQLModel):
     id_device: str
@@ -20,7 +21,7 @@ class DeviceResponse(SQLModel):
     status_perangkat: bool = False
 
 #endpoint
-@router.post('/heartbeat', status_code=status.HTTP_200_OK, dependencies=Depends([verifikasi_perangkat]))
+@router.post('/heartbeat', status_code=status.HTTP_200_OK, dependencies=[Depends(verifikasi_perangkat)])
 def esp_ke_server(form: DeviceRequest):
     sekarang = datetime.now(timezone.utc)
     devices[form.id_device] = {
@@ -32,7 +33,7 @@ def esp_ke_server(form: DeviceRequest):
         'timestamp': sekarang
     }
 
-@router.get('/', response_model=list[DeviceResponse], status_code=status.HTTP_200_OK, dependencies=Depends([require_role('admin')]))
+@router.get('/', response_model=list[DeviceResponse], status_code=status.HTTP_200_OK, dependencies=[Depends(require_role('admin'))])
 def get_data_perangkat():
     sekarang = datetime.now(timezone.utc)
     hasil = []

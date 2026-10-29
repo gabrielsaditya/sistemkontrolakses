@@ -6,7 +6,7 @@ import uuid
 from typing import List
 from ..auth.dependency import require_role
 
-router = APIRouter(prefix='/logs', tags=['logs'], dependencies=Depends([require_role('admin')]))
+router = APIRouter(prefix='/logs', tags=['logs'], dependencies=[Depends(require_role('admin'))])
 
 @router.post("/", response_model=ReadLog, status_code=status.HTTP_201_CREATED)
 def create_logs(session: SessionDep, form: CreateLog):
