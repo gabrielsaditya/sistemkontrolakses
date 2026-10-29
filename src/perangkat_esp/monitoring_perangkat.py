@@ -4,6 +4,7 @@ from fastapi import APIRouter, status, Depends
 from sqlmodel import SQLModel
 from ..auth.dependency import require_role, verifikasi_perangkat
 
+#set router
 router = APIRouter(prefix='/devices', tags=['devices'])
 devices = {}
 
