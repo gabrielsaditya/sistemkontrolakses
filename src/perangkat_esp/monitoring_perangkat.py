@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from ..core.config import MAKSIMUM_WAKTU_DEVICE
 from fastapi import APIRouter, status, Depends
 from sqlmodel import SQLModel
-from ..auth.dependency import require_role
+from ..auth.dependency import require_role, verifikasi_perangkat
 
-router = APIRouter(prefix='/devices', tags=['devices'], dependencies=[Depends(require_role("admin"))])
+router = APIRouter(prefix='/devices', tags=['devices'])
 devices = {}
 
 #model
@@ -19,7 +19,7 @@ class DeviceResponse(SQLModel):
     status_perangkat: bool = False
 
 #endpoint
-@router.post('/heartbeat', status_code=status.HTTP_200_OK)
+@router.post('/heartbeat', status_code=status.HTTP_200_OK, dependencies=Depends([verifikasi_perangkat]))
 def esp_ke_server(form: DeviceRequest):
     sekarang = datetime.now(timezone.utc)
     devices[form.id_device] = {
@@ -31,7 +31,7 @@ def esp_ke_server(form: DeviceRequest):
         'timestamp': sekarang
     }
 
-@router.get('/', response_model=list[DeviceResponse], status_code=status.HTTP_200_OK)
+@router.get('/', response_model=list[DeviceResponse], status_code=status.HTTP_200_OK, dependencies=Depends([require_role('admin')]))
 def get_data_perangkat():
     sekarang = datetime.now(timezone.utc)
     hasil = []

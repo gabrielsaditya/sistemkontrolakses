@@ -1,10 +1,12 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 from ..auth.dependency import SessionDep
 from .model import ReadLog, UpdateLog, CreateLog
 from .service import LogAksesService
 import uuid
 from typing import List
-router = APIRouter(prefix='/logs', tags=['logs'])
+from ..auth.dependency import require_role
+
+router = APIRouter(prefix='/logs', tags=['logs'], dependencies=Depends([require_role('admin')]))
 
 @router.post("/", response_model=ReadLog, status_code=status.HTTP_201_CREATED)
 def create_logs(session: SessionDep, form: CreateLog):

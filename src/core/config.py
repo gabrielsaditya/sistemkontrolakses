@@ -15,12 +15,6 @@ ALAMAT_STORAGE = os.getenv('ALAMAT_STORAGE')
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = os.getenv('ALGORITHM')
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl='login')
 MAKSIMUM_WAKTU_DEVICE = 90
-
-print(DATABASE_URL)
-print(ALAMAT_STORAGE)
-print(SECRET_KEY)
-print(ALGORITHM)
-print(ACCESS_TOKEN_EXPIRE_MINUTES)
-print(oauth2_scheme)
+ESP_32_API_KEY = 'Dwl33cLcAzlX_LyNMkF-cQ'
