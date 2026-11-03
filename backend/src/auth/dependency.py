@@ -15,8 +15,8 @@ def get_current_user(session: SessionDep, token: str = Depends(OAUTH2_SCHEME)):
         username: str = payload.get('sub')
         if username is None:
             raise HTTPException(401, 'TOKEN PAYLOAD TIDAK VALID')
-    except JWTError:
-        raise HTTPException(401, 'TOKEN TIDAK VALID')
+    except JWTError as jwt_error_message:
+        raise HTTPException(401, f'TOKEN TIDAK VALID: {jwt_error_message}')
 
     user = session.exec(select(User).where(User.username == username)).first()
     if user is None:

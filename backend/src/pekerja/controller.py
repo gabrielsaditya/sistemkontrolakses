@@ -10,6 +10,7 @@ from .model import (
 )
 from .service import PekerjaService
 from ..auth.dependency import require_role
+from ..auth.dependency import verifikasi_perangkat
 
 router = APIRouter(prefix="/pekerja", tags=['pekerja'], dependencies=[Depends(require_role("admin"))])
 
@@ -38,14 +39,16 @@ def delete_pekerja(session: SessionDep, id_pekerja: uuid.UUID):
     return eksekusi_tugas.delete_pekerja(id_pekerja)
 
 
+
+scan_only = APIRouter(prefix='/scan', tags=['scan'], dependencies=[Depends(verifikasi_perangkat)])
 #untuk scan rfid dari esp supaya muncul uid nya di frontend
-@router.post("/scan-rfid", status_code=status.HTTP_200_OK)
+@scan_only.post("/", status_code=status.HTTP_200_OK)
 def scan_rfid(form: RFIDScan):
     try:
         return {
             "status": "SUCCESS",
             "message": "UID RFID BERHASIL DITERIMA",
-            "rfid_uid": form.rfid_uid
+            "rfid_uid": form.uid_rfid
         }
     except Exception as e:
         raise HTTPException(

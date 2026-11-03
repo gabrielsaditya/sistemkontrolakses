@@ -1,9 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from .core.db import create_db_and_tables, buat_konfigurasi_default
 from .deteksi.service import get_inference
 from .logging_config import LogLevel, konfigurasi_logging
 from contextlib import asynccontextmanager
 from .api import tambah_route
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
 
 #1. KONFIGURASI LOGGING SUPAYA ERROR ATAU DEBUGGING BISA TER TRACE DENGAN BAIK
 konfigurasi_logging(LogLevel.DEBUG)
@@ -32,6 +35,26 @@ app = FastAPI(
 #5. TAMBAH ROUTE 
 tambah_route(app)
 
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # exc.errors() berisi daftar field yang error dan alasannya
+    custom_errors = []
+    for error in exc.errors():
+        custom_errors.append({
+            "field": " -> ".join(str(loc) for loc in error["loc"] if loc != "body"),
+            "message": error["msg"],
+            "type": error["type"]
+        })
+        
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={
+            "status": "fail",
+            "message": "Validasi data gagal, bro!",
+            "errors": custom_errors
+        }
+    )
 #6. HOME ENDPOINT AJA
 @app.get("/")
 def index():

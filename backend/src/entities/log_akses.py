@@ -7,16 +7,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..entities.pekerja import Pekerja
 
-"""
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
-
-Pengukuran dilakukan dengan beberapa metrik:
-- delay atau latensi request response
-- latensi yolo atau inferensi
-- konsumsi cpu dan ram server saat menjalankan flow inferensi
-- akurasi flow sampai keputusan akhir membuka pintu akses
-"""
-
 class TabelLogAkses(SQLModel, table=True):
     __tablename__ = "log_akses"
 

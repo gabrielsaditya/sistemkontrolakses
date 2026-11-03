@@ -22,7 +22,7 @@ def read_logs(session: SessionDep, offset: int=0, limit: int=10, search: str | N
         search=search
     )
 
-@router.patch("/{id_log}", response_model=ReadLog, status_code=status.HTTP_200_OK)
+@router.patch("/{id_log}", status_code=status.HTTP_200_OK)
 def edit_logs(session: SessionDep, id_log: uuid.UUID,form: UpdateLog):
     servis = LogAksesService(session)
     return servis.edit_log(id_log, form)

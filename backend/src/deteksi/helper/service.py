@@ -106,8 +106,6 @@ class Inference:
         except Exception as e:
             raise RuntimeError(f"TERJADI KESALAHAN SAAT MELAKUKAN INFERENSI: {e}")
 
-    async def inferensi_video(self, video_source):
-        pass
 
 _inference: Inference | None = None
 

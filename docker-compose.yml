@@ -29,7 +29,7 @@ services:
             - postgres
 
     backend:
-        build: . 
+        build: ./backend 
         container_name: backend
         restart: always 
         ports:

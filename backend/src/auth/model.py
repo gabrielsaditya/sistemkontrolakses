@@ -5,11 +5,9 @@ class Registrasi(SQLModel):
     password: str
     full_name: str | None
 
-class Login(SQLModel):
-    username: str
-    password: str
+
 
 class Token(SQLModel):
-    token_akses: str
-    tipe_token: str = 'bearer'
+    access_token: str
+    token_type: str = 'bearer'
 

@@ -1,16 +1,16 @@
 from sqlmodel import select
 from ..core.db import SessionDep
-from .model import Registrasi, Login
+from .model import Registrasi
 from ..entities.user import User
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from .helper.auth_security import AuthHelper
+from fastapi.security import OAuth2PasswordRequestForm
 
 class AuthService:
     def __init__(self, session: SessionDep):
         self.session = session
 
     def register(self, form: Registrasi):
-        #cari pekerja dulu
         try:
             db_user = self.session.exec(select(User).where(form.username == User.username)).first()
 
@@ -35,8 +35,8 @@ class AuthService:
 
 
             return {
-                'token_akses': token,
-                'tipe_token': 'bearer'
+                'access_token': token,
+                'token_type': 'bearer'
             }
             
         except HTTPException:
@@ -47,11 +47,11 @@ class AuthService:
             self.session.rollback()
             raise HTTPException(500, f'PROSES LOGIN GAGAL DILAKUKAN: {e}')
 
-    def login(self, form: Login):
+    def login(self, form: OAuth2PasswordRequestForm = Depends()):
         try:
             pekerja_terdaftar = self.session.exec(select(User).where(User.username == form.username)).first()
 
-            if not pekerja_terdaftar :
+            if not pekerja_terdaftar:
                 raise HTTPException(401, 'INVALID CREDENTIALS!')
             
             servis = AuthHelper()
@@ -65,11 +65,10 @@ class AuthService:
             })
 
             return {
-                'token_akses': token,
-                'tipe_token': 'bearer'
+                'access_token': token,
+                'token_type': 'bearer'
             }
-
-
+        
         except HTTPException:
             self.session.rollback()
             raise

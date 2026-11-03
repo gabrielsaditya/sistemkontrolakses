@@ -24,7 +24,7 @@ class ReadLog(SQLModel):
     uid_rfid: str
     nama_pekerja: str
     tanggal_akses: datetime
-    item_terdeteksi: list[str]
+    item_terdeteksi: list[list[int]]
     path_gambar_raw: list[str]
     path_gambar_terdeteksi: list[str]
     size_foto_raw: list[float]
