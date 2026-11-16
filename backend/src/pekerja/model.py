@@ -9,7 +9,6 @@ class PekerjaCreate(BaseModel):
   name: str
   rfid_uid: str
   role: str 
-  created_at: datetime
   is_active: bool = Field(default_factory= True)
 
 class PekerjaUpdate(BaseModel): 

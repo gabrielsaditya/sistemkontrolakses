@@ -32,8 +32,6 @@ class AuthService:
             token = service.buat_token_akses({
                 'sub': form.username
             })
-
-
             return {
                 'access_token': token,
                 'token_type': 'bearer'
