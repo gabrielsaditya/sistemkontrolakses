@@ -1,0 +1,7 @@
+.env
+.pyenv
+.venv
+__pycache__
+storage
+runs
+reset_db.py

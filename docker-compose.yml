@@ -1,5 +1,6 @@
 version: '3.8'
 services:
+    
     postgres:
         image: postgres:16-alpine
         container_name: database
@@ -28,7 +29,7 @@ services:
             - postgres
 
     backend:
-        build: . 
+        build: ./backend 
         container_name: backend
         restart: always 
         ports:
@@ -36,7 +37,7 @@ services:
         environment:
             - DATABASE_URL=postgresql+psycopg://admin:admin123@postgres:5432/gatekeeper_db
         volumes:
-            - ./uploads:/workspace/uploads
+            - ./storage:/workspace/storage
         depends_on:
             - postgres
 
