@@ -12,7 +12,6 @@ devices = {}
 class DeviceRequest(SQLModel):
     id_device: str
     kualitas_rssi_perangkat: int | None = None
-    api_key: str
 
 class DeviceResponse(SQLModel):
     id_device: str
