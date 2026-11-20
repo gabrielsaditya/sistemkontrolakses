@@ -1,45 +1,66 @@
-version: '3.8'
-services:
-    
-    postgres:
-        image: postgres:16-alpine
-        container_name: database
-        restart: always
-        environment:
-            POSTGRES_USER: admin
-            POSTGRES_PASSWORD: admin123
-            POSTGRES_DB: gatekeeper_db
-        ports:
-            - "5432:5432"
-        volumes:
-            - postgres_data:/var/lib/postgresql/data 
-        
-    pgadmin:
-        image: dpage/pgadmin4:9.8
-        container_name: pgadmin
-        restart: always
-        ports:
-            - "5050:80"
-        environment:
-            PGADMIN_DEFAULT_EMAIL: demo@example.com 
-            PGADMIN_DEFAULT_PASSWORD: secret 
-            PGADMIN_CONFIG_SERVER_MODE: 'False'
-            PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-        depends_on:
-            - postgres
 
-    backend:
-        build: ./backend 
-        container_name: backend
-        restart: always 
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: gatekeeper_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d gatekeeper_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:9.8
+    container_name: pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: demo@example.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: DockerFile
+    container_name: backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/workspace/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: DockerFile
+        container_name: frontend
+        restart: unless-stopped
+        env_file:
+            - ./frontend/.env
         ports:
-            - "8000:8000"
-        environment:
-            - DATABASE_URL=postgresql+psycopg://admin:admin123@postgres:5432/gatekeeper_db
-        volumes:
-            - ./storage:/workspace/storage
+            - "8501:8501"
         depends_on:
-            - postgres
+            - backend
 
 volumes:
-    postgres_data:
+  postgres_data:

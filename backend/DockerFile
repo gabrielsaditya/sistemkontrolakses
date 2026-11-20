@@ -3,6 +3,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /workspace
 
 ENV UV_COMPILE_BYTECODE 1
+ENV PYTHONUNBUFFERED=1
 
 COPY pyproject.toml uv.lock* ./
 
@@ -10,7 +11,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src/ ./app/
 
-RUN uv sync --frozen --nodev
+RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
