@@ -1,7 +1,7 @@
 [project]
 name = "frontend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Frontend For AI & IoT System"
 readme = "README.md"
 authors = [
     { name = "gabrielsaditya", email = "gabrielsatyaadityaa@gmail.com" }

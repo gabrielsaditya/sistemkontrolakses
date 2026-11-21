@@ -49,18 +49,18 @@ services:
       postgres:
         condition: service_healthy
 
-    frontend:
-        build:
-            context: ./frontend
-            dockerfile: DockerFile
-        container_name: frontend
-        restart: unless-stopped
-        env_file:
-            - ./frontend/.env
-        ports:
-            - "8501:8501"
-        depends_on:
-            - backend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: DockerFile
+    container_name: frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

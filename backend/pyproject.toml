@@ -21,6 +21,15 @@ dependencies = [
     "python-multipart>=0.0.32",
     "slowapi>=0.1.10",
     "sqlmodel==0.0.48",
-    "ultralytics>=8.4.177",
+    "ultralytics==8.4.60",
     "uvicorn>=0.54.0",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
