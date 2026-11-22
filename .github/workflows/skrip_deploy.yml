@@ -1,0 +1,20 @@
+name: DEPLOY KE VPS UGM
+
+#SETIAP PUSH DI BRANCH MAIN
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    #DARI STEP INI PROJEK DI VPS AKAN SELALU SAMA DENGAN REPO GITHUB BRANCH MAIN KARENA DIPAKSA SUPAYA TIDAK ADA KONFLIK
+    steps:
+      - name: DEPLOY BROOO
+        run: |
+          cd /home/ubuntu-gabriel/sistemkontrolakses
+          git fetch origin main
+          git reset --hard origin/main
+          docker compose up -d --build
