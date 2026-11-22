@@ -6,6 +6,11 @@ on:
     branches:
       - main
 
+#SUPAYA GA TABRAKAN AJA
+concurrency:
+  group: DEPLOY_VPS
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: self-hosted

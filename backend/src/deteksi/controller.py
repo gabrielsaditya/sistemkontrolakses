@@ -142,7 +142,7 @@ async def deteksi_gambar(
     form = DeteksiRequest(
         device_id=device_id,
         uid_rfid=uid_rfid,
-        latensi_request=completed_batch["started_at"]
+        latensi_request = time.perf_counter() - completed_batch["started_at"]
     )
 
     servis = DeteksiService(session)
