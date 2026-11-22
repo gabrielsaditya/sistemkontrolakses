@@ -60,9 +60,9 @@ async def scan_rfid(form: RFIDScan):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"GAGAL MENANGKAP UID: {str(e)}"
         )
-
+scan_ws = APIRouter(prefix="/scan-ws", tags=['scan-ws'])
 #websocket untuk listen uid rfid ini cuma untuk pengisian otomatis form aja
-@scan_only.websocket("/ws")
+@scan_ws.websocket("/ws")
 async def websocket_scan_only(websocket: WebSocket):
     await scan_rfid_only.hubungkan(websocket)
 
