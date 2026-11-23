@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from frontend.api.client import request
+from config import FASTAPI_URL
 
 st.title("Log Akses")
 token = st.session_state.token
@@ -83,10 +84,17 @@ with st.expander("Detail Log"):
             raw_images = selected.get("path_gambar_raw", [])
 
             if raw_images:
-                st.image([
-                    f"{FASTAPI_URL}/storage/{path.removeprefix('storage/')}"
-                    for path in raw_images
-                ], caption="Foto sebelum deteksi")
+                st.image(
+                    [
+                        f"{FASTAPI_URL}/deteksi/storage/{path}"
+                        for path in raw_images
+                    ],
+                    caption=[
+                        f"Foto Raw {i + 1}"
+                        for i in range(len(raw_images))
+                    ],
+                    use_container_width=True
+                )
             else:
                 st.info("Tidak ada foto raw.")
 
@@ -96,10 +104,17 @@ with st.expander("Detail Log"):
             )
 
             if detected_images:
-                st.image([
-                    f"{FASTAPI_URL}/storage/{path.removeprefix('storage/')}"
-                    for path in detected_images
-                ], caption="Foto setelah deteksi")
+                st.image(
+                    [
+                        f"{FASTAPI_URL}/deteksi/storage/{path}"
+                        for path in detected_images
+                    ],
+                    caption=[
+                        f"Foto Annotated {i + 1}"
+                        for i in range(len(detected_images))
+                    ],
+                    use_container_width=True
+                )
             else:
                 st.info("Tidak ada foto hasil deteksi.")
 

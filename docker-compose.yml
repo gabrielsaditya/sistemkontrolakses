@@ -42,7 +42,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - ALAMAT_STORAGE: /workspace/storage
+      - ALAMAT_STORAGE=/workspace/storage
     ports:
       - "8000:8000"
     volumes:
