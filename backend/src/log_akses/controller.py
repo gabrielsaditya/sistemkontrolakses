@@ -1,10 +1,12 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from ..auth.dependency import SessionDep
 from .model import ReadLog, UpdateLog, CreateLog
 from .service import LogAksesService
 import uuid
 from typing import List
 from ..auth.dependency import require_role
+from ..core.config import ALAMAT_STORAGE
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix='/logs', tags=['logs'], dependencies=[Depends(require_role('admin'))])
 
@@ -31,3 +33,16 @@ def edit_logs(session: SessionDep, id_log: uuid.UUID,form: UpdateLog):
 def delete_log(session: SessionDep, id_log: uuid.UUID):
     servis = LogAksesService(session)
     return servis.delete_log(id_log)
+
+#endpoint storage supaya frontend bisa mudah akses foto
+@router.get("/storage/{file_path:path}")
+def lihat_foto(file_path: str):
+    file = (ALAMAT_STORAGE / file_path).resolve()
+
+    if not file.is_relative_to(ALAMAT_STORAGE):
+        raise HTTPException(403, "FORBIDDEN")
+
+    if not file.is_file():
+        raise HTTPException(404, "FOTO TIDAK DITEMUKAN")
+
+    return FileResponse(file)

@@ -4,9 +4,7 @@ from .model import (DeteksiRequest, DeteksiResponse, Konfigurasi)
 from .service import DeteksiService
 from ..core.db import SessionDep
 from .model import UploadFile
-from ..auth.dependency import require_role, verifikasi_perangkat, get_current_user
-from fastapi.responses import FileResponse
-from ..core.config import ALAMAT_STORAGE
+from ..auth.dependency import require_role, verifikasi_perangkat
 router = APIRouter(prefix="/deteksi", tags=['deteksi'])
 
 
@@ -35,7 +33,7 @@ MAX_BATCH_SIZE = 30 * 1024 * 1024      # 30 MB
 BATCH_TIMEOUT = 60                     # 60 detik
 
 
-@router.post("/")
+@router.post("/", response_model=DeteksiResponse, status_code=status.HTTP_200_OK)
 async def deteksi_gambar(
     request: Request,
     session: SessionDep,
@@ -161,14 +159,3 @@ def update_konfigurasi(session: SessionDep,  form: Konfigurasi, user: User = Dep
     return servis.update_konfigurasi(form)
 
 
-@router.get("/storage/{file_path:path}")
-def lihat_foto(file_path: str):
-    file = (ALAMAT_STORAGE / file_path).resolve()
-
-    if not file.is_relative_to(ALAMAT_STORAGE):
-        raise HTTPException(403, "FORBIDDEN")
-
-    if not file.is_file():
-        raise HTTPException(404, "FOTO TIDAK DITEMUKAN")
-
-    return FileResponse(file)
