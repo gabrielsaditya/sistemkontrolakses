@@ -79,6 +79,30 @@ with st.expander("Detail Log"):
 
             st.json(selected)
 
+            st.subheader("Foto Raw")
+            raw_images = selected.get("path_gambar_raw", [])
+
+            if raw_images:
+                st.image([
+                    f"{FASTAPI_URL}/storage/{path.removeprefix('storage/')}"
+                    for path in raw_images
+                ], caption="Foto sebelum deteksi")
+            else:
+                st.info("Tidak ada foto raw.")
+
+            st.subheader("Foto Hasil Deteksi")
+            detected_images = selected.get(
+                "path_gambar_terdeteksi", []
+            )
+
+            if detected_images:
+                st.image([
+                    f"{FASTAPI_URL}/storage/{path.removeprefix('storage/')}"
+                    for path in detected_images
+                ], caption="Foto setelah deteksi")
+            else:
+                st.info("Tidak ada foto hasil deteksi.")
+
     except Exception as e:
         st.error(str(e))
 

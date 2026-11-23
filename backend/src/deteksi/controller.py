@@ -5,6 +5,8 @@ from .service import DeteksiService
 from ..core.db import SessionDep
 from .model import UploadFile
 from ..auth.dependency import require_role, verifikasi_perangkat, get_current_user
+from fastapi.responses import FileResponse
+from ..core.config import ALAMAT_STORAGE
 router = APIRouter(prefix="/deteksi", tags=['deteksi'])
 
 
@@ -157,3 +159,16 @@ def lihat_konfigurasi(session: SessionDep, user: User = Depends(require_role("ad
 def update_konfigurasi(session: SessionDep,  form: Konfigurasi, user: User = Depends(require_role("admin"))):
     servis = DeteksiService(session)
     return servis.update_konfigurasi(form)
+
+
+@router.get("/storage/{file_path:path}")
+def lihat_foto(file_path: str):
+    file = (ALAMAT_STORAGE / file_path).resolve()
+
+    if not file.is_relative_to(ALAMAT_STORAGE):
+        raise HTTPException(403, "FORBIDDEN")
+
+    if not file.is_file():
+        raise HTTPException(404, "FOTO TIDAK DITEMUKAN")
+
+    return FileResponse(file)

@@ -1,6 +1,30 @@
-
 import streamlit as st
+import websocket
+import threading
+import queue
+import json
+
+from streamlit_autorefresh import st_autorefresh
 from frontend.api.client import request
+
+WS_URL = "wss://api.gabrielsaditya-studio.my.id/scan-ws/ws"
+
+
+def listen_rfid(rfid_queue):
+    def on_message(ws, message):
+        try:
+            data = json.loads(message)
+            rfid_queue.put(data)
+        finally:
+            ws.close()
+
+    ws = websocket.WebSocketApp(
+        WS_URL,
+        on_message=on_message,
+        on_error=lambda ws, error: rfid_queue.put({"error": str(error)})
+    )
+
+    ws.run_forever()
 
 st.title("Manajemen Pekerja")
 token = st.session_state.token
@@ -46,9 +70,52 @@ except Exception as e:
     st.error(f"Gagal mengambil data: {e}")
 
 with st.expander("Tambah Pekerja"):
+
+    if "rfid_queue" not in st.session_state:
+        st.session_state.rfid_queue = queue.Queue()
+
+    if "rfid_listening" not in st.session_state:
+        st.session_state.rfid_listening = False
+
+    if "rfid_uid_input" not in st.session_state:
+        st.session_state.rfid_uid_input = ""
+
+    if st.button("Scan RFID"):
+        if not st.session_state.rfid_listening:
+            st.session_state.rfid_listening = True
+
+            threading.Thread(
+                target=listen_rfid,
+                args=(st.session_state.rfid_queue,),
+                daemon=True
+            ).start()
+
+    if st.session_state.rfid_listening:
+        st.info("Menunggu kartu RFID...")
+        st_autorefresh(interval=500, key="rfid_refresh")
+
+    try:
+        data = st.session_state.rfid_queue.get_nowait()
+
+        st.session_state.rfid_listening = False
+
+        if "error" in data:
+            st.error(data["error"])
+        else:
+            st.session_state.rfid_uid_input = data["uid_rfid"]
+            st.success("RFID berhasil terbaca!")
+
+    except queue.Empty:
+        pass
+
     with st.form("create_worker"):
         name = st.text_input("Nama")
-        rfid_uid = st.text_input("RFID UID")
+
+        rfid_uid = st.text_input(
+            "RFID UID",
+            key="rfid_uid_input"
+        )
+
         role = st.text_input("Role")
         is_active = st.checkbox("Aktif", value=True)
 
@@ -65,8 +132,10 @@ with st.expander("Tambah Pekerja"):
                         "is_active": is_active
                     }
                 )
+
                 st.success("Pekerja berhasil ditambahkan")
                 st.rerun()
+
             except Exception as e:
                 st.error(str(e))
 

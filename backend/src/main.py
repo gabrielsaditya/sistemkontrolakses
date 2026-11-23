@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, status
+from fastapi.staticfiles import StaticFiles
 from .core.db import create_db_and_tables, buat_konfigurasi_default
 from .deteksi.service import get_inference
 from .logging_config import LogLevel, konfigurasi_logging
@@ -6,6 +7,7 @@ from contextlib import asynccontextmanager
 from .api import tambah_route
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from .core.config import setup_storage
 
 
 #1. KONFIGURASI LOGGING SUPAYA ERROR ATAU DEBUGGING BISA TER TRACE DENGAN BAIK
@@ -14,7 +16,7 @@ konfigurasi_logging(LogLevel.DEBUG)
 #2. KASIH CONTENXT MANAGER SUPAYA MODEL DI LOAD DARI AWAL SERVER DIMULAI DAN NANTINYA PAKAI SESSION MODEL ITU TERUS TIDA LOAD BERKALI KALI
 @asynccontextmanager
 async def lifespan_model_inferensi(app: FastAPI):
-    
+    setup_storage()
     create_db_and_tables()
     buat_konfigurasi_default()
     get_inference().load_model_dari_huggingface(
@@ -31,7 +33,11 @@ app = FastAPI(
     description="BACKEND UNTUK SISTEM KONTROL AKSES AREA BERBASIS IOT DAN COMPUTER VISION",
     lifespan=lifespan_model_inferensi
 )
-
+app.mount(
+    "/storage",
+    StaticFiles(directory="storage"),
+    name='storage'
+)
 #5. TAMBAH ROUTE 
 tambah_route(app)
 

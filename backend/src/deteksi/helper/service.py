@@ -6,6 +6,7 @@ from huggingface_hub import hf_hub_download
 from typing import List
 from ..model import UploadFile
 from pathlib import Path
+from ...core.config import ALAMAT_STORAGE
 
 class Inference:
     def __init__(self, model = None):
@@ -59,7 +60,7 @@ class Inference:
                 raise RuntimeError(f"GAGAL MENYIMPAN GAMBAR: {nama_raw}")
             size_gambar_raw_mb.append(os.path.getsize(nama_raw) / (1024**2))
             image_source.append(frame)
-            path_raw.append(str(nama_raw))
+            path_raw.append(nama_raw.relative_to(ALAMAT_STORAGE).as_posix())
 
         hasil_deteksi_semua_gambar = []
         try:
@@ -96,7 +97,7 @@ class Inference:
                     'LIST_KELAS_TERDETEKSI' : list_kelas_terdeteksi,
                     'CONF_LIST' : list_confidence,
                     "PATH_RAW": path_raw[index],
-                    "PATH_ANNOTATED": str(nama_gambar_terdeteksi),
+                    "PATH_ANNOTATED": nama_gambar_terdeteksi.relative_to(ALAMAT_STORAGE).as_posix(),
                     "SIZE_FOTO_RAW": float(size_gambar_raw_mb[index]),
                     "SIZE_FOTO_TERDETEKSI": float(size_gambar_terdeteksi_mb),
                     "LOLOS": keputusan_lolos
